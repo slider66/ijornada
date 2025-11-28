@@ -1,2 +1,107 @@
-# ijornada
-ijornada para ti y cuantos más
+# iJornada - Sistema de Gestión de Fichaje Laboral
+
+iJornada es una aplicación moderna y escalable para el control de asistencia y gestión de horarios laborales, diseñada para cumplir con la normativa de registro de jornada. El sistema ofrece una interfaz administrativa para la gestión de empleados y horarios, así como un modo "Kiosco" para el fichaje rápido y sin interacción.
+
+## 🚀 Características Principales
+
+### 🖥️ Panel de Administración (`/admin`)
+
+- **Gestión de Usuarios**: Alta, baja y modificación de empleados.
+- **Horarios y Turnos**: Configuración de horarios laborales y turnos rotativos.
+- **Incidencias**: Registro y seguimiento de ausencias, vacaciones y bajas médicas.
+- **Reportes**: Visualización de registros de fichaje y auditoría.
+
+### 🤖 Modo Kiosco (`/kiosk`)
+
+- **Fichaje Rápido**: Interfaz simplificada para el registro de entrada y salida.
+- **Múltiples Métodos de Identificación**: Soporte para PIN, NFC y huella dactilar (según hardware).
+- **Feedback Visual y Auditivo**: Confirmación inmediata de acciones mediante señales visuales y sonoras.
+- **Reloj Flip**: Visualización atractiva de la hora actual en pantalla completa.
+
+### 🛠️ Tecnología
+
+El proyecto está construido con un stack tecnológico moderno y robusto:
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Lenguaje**: [TypeScript](https://www.typescriptlang.org/)
+- **Base de Datos**: [SQLite](https://www.sqlite.org/) (vía [Prisma ORM](https://www.prisma.io/))
+- **Estilos**: [Tailwind CSS](https://tailwindcss.com/)
+- **Componentes UI**: [shadcn/ui](https://ui.shadcn.com/)
+- **Autenticación**: [Auth.js (NextAuth)](https://authjs.dev/)
+- **Animaciones**: [Framer Motion](https://www.framer.com/motion/)
+
+## ⚙️ Instalación y Configuración
+
+### Prerrequisitos
+
+- Node.js 18+
+- npm o pnpm
+
+### Pasos para iniciar
+
+1.  **Clonar el repositorio**:
+
+    ```bash
+    git clone <url-del-repositorio>
+    cd ijornada
+    ```
+
+2.  **Instalar dependencias**:
+
+    ```bash
+    npm install
+    # o
+    pnpm install
+    ```
+
+3.  **Configurar variables de entorno**:
+    Crea un archivo `.env` en la raíz del proyecto basándote en el siguiente ejemplo:
+
+    ```env
+    DATABASE_URL="file:./dev.db"
+    AUTH_SECRET="tu-secreto-generado" # Generar con: npx auth secret
+    ```
+
+4.  **Inicializar la base de datos**:
+
+    ```bash
+    npx prisma migrate dev --name init
+    ```
+
+5.  **Iniciar el servidor de desarrollo**:
+
+    ```bash
+    npm run dev
+    ```
+
+    La aplicación estará disponible en `http://localhost:3000`.
+
+## 📂 Estructura del Proyecto
+
+```
+/app
+  /admin      # Rutas y lógica del panel de administración
+  /api        # Endpoints de la API (REST)
+  /kiosk      # Interfaz para el modo kiosco
+  layout.tsx  # Layout principal
+  page.tsx    # Página de inicio (Landing/Login)
+/components
+  /ui         # Componentes reutilizables (shadcn/ui)
+/prisma
+  schema.prisma # Definición del esquema de base de datos
+/public       # Archivos estáticos
+```
+
+## 🔐 Autenticación y Roles
+
+El sistema maneja dos roles principales definidos en el modelo de datos:
+
+- **ADMIN**: Acceso total al panel de administración y configuración.
+- **USER**: Acceso limitado, principalmente para el registro de jornada y consulta de historial propio.
+
+## 📝 Scripts Disponibles
+
+- `npm run dev`: Inicia el entorno de desarrollo.
+- `npm run build`: Compila la aplicación para producción.
+- `npm run start`: Inicia la aplicación en modo producción.
+- `npm run lint`: Ejecuta el linter para verificar la calidad del código.

@@ -1,0 +1,81 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  pin       String?  @unique
+  nfcTagId  String?  @unique
+  role      String   @default("USER") // USER, ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clockIns  ClockIn[]
+  incidents Incident[]
+  schedules Schedule[]
+}
+
+model ClockIn {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // IN, OUT
+  method    String   // WEB, NFC, FINGERPRINT, PIN
+  timestamp DateTime @default(now())
+  photoUrl  String?
+  location  String?
+  
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Incident {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  status      String   @default("PENDING")
+  
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Schedule {
+  id        String     @id @default(cuid())
+  userId    String?
+  dayOfWeek Int        // 0-6 (Sunday-Saturday)
+  slots     TimeSlot[]
+  
+  user      User?      @relation(fields: [userId], references: [id])
+}
+
+model TimeSlot {
+  id         String   @id @default(cuid())
+  scheduleId String
+  startTime  String   // "08:00"
+  endTime    String   // "13:00"
+  
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   String
+  userId    String?
+  timestamp DateTime @default(now())
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime
+  name      String
+  type      String   // NATIONAL, REGIONAL, LOCAL
+  region    String   @default("Madrid")
+}
