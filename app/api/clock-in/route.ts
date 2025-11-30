@@ -39,6 +39,9 @@ export async function POST(req: Request) {
         photoUrl,
         location,
       },
+      include: {
+        user: true,
+      },
     })
 
     return NextResponse.json(clockIn)
