@@ -68,7 +68,15 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
     npx prisma migrate dev --name init
     ```
 
-5.  **Iniciar el servidor de desarrollo**:
+5.  **Crear usuario inicial**:
+    Actualmente no existe un script de seed ni página de registro pública. Para crear el primer usuario administrador, utiliza Prisma Studio:
+
+    ```bash
+    npx prisma studio
+    ```
+    Abre la interfaz web, selecciona el modelo `User` y crea un registro con `role: "ADMIN"`.
+
+6.  **Iniciar el servidor de desarrollo**:
 
     ```bash
     npm run dev
@@ -82,6 +90,7 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
 /app
   /admin      # Rutas y lógica del panel de administración
   /api        # Endpoints de la API (REST)
+  /demo       # Demos de componentes y funcionalidades
   /kiosk      # Interfaz para el modo kiosco
   layout.tsx  # Layout principal
   page.tsx    # Página de inicio (Landing/Login)
@@ -91,6 +100,19 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
   schema.prisma # Definición del esquema de base de datos
 /public       # Archivos estáticos
 ```
+
+## ⚠️ Notas Importantes
+
+### Autenticación
+El archivo `auth.ts` contiene una configuración base para **NextAuth** con el proveedor de credenciales. **La lógica de autorización (`authorize`) es actualmente un placeholder** y debe ser implementada para validar las credenciales contra la base de datos (comparando hashes de contraseñas, etc.).
+
+### Base de Datos
+El esquema (`prisma/schema.prisma`) define los siguientes modelos principales:
+- **User**: Empleados y administradores.
+- **ClockIn**: Registros de fichaje (entrada/salida).
+- **Incident**: Incidencias (vacaciones, bajas).
+- **Schedule**: Horarios asignados.
+- **AuditLog**: Registro de acciones del sistema.
 
 ## 🔐 Autenticación y Roles
 

@@ -26,8 +26,8 @@ export default function AdminLayout({
           </Link>
         </nav>
         <div className="mt-auto pt-8 border-t border-slate-700">
-          <Link href="/kiosk" className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded text-slate-400">
-            <Home className="h-5 w-5" /> Volver al Kiosco
+          <Link href="/" className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded text-slate-400">
+            <Home className="h-5 w-5" /> Home / Kiosk
           </Link>
         </div>
       </aside>

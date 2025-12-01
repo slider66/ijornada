@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const Digit = ({ value }: { value: number }) => {
   return (
@@ -22,7 +23,7 @@ const Digit = ({ value }: { value: number }) => {
   );
 };
 
-export default function FlipClock() {
+export default function FlipClock({ className }: { className?: string }) {
   const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function FlipClock() {
   const seconds = time.getSeconds().toString().padStart(2, "0");
 
   return (
-    <div className="flex justify-center items-center gap-1 min-h-screen">
+    <div className={cn("flex justify-center items-center gap-1", className)}>
       {hours.split("").map((digit, i) => (
         <Digit key={`h-${i}`} value={parseInt(digit)} />
       ))}

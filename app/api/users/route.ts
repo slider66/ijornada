@@ -4,7 +4,7 @@ import { z } from "zod"
 
 const userSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email(),
+  email: z.string().email().optional().or(z.literal("")),
   nfcTagId: z.string().optional(),
   pin: z.string().optional(),
   role: z.string().default("USER"),
@@ -21,13 +21,52 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const data = userSchema.parse(body)
-    
+
+    // Handle empty fields as null to avoid unique constraint violations
+    // Zod optional() returns undefined, but Prisma expects null for nullable fields if explicitly passed
+    const userData = {
+      ...data,
+      email: data.email || null,
+      pin: data.pin || null,
+      nfcTagId: data.nfcTagId || null,
+    }
+
     const user = await prisma.user.create({
-      data,
+      data: userData,
     })
-    
+
     return NextResponse.json(user)
   } catch (error) {
+    console.error(error)
     return NextResponse.json({ error: "Error creating user" }, { status: 400 })
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json()
+    const { id, ...rest } = body
+
+    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 })
+
+    const data = userSchema.parse(rest)
+
+    // Handle empty fields as null
+    const userData = {
+      ...data,
+      email: data.email || null,
+      pin: data.pin || null,
+      nfcTagId: data.nfcTagId || null,
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: userData,
+    })
+
+    return NextResponse.json(user)
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: "Error updating user" }, { status: 400 })
   }
 }
