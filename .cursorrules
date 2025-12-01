@@ -1,0 +1,41 @@
+# Reglas Globales del Proyecto iJornada
+
+Este proyecto debe cumplir estrictamente con la normativa laboral y de protección de datos de España (2025-2026).
+**CONSULTA OBLIGATORIA:** [docs/legal_requirements_es.md](docs/legal_requirements_es.md) para el detalle completo de requisitos legales y técnicos.
+
+## 🚨 Requisitos Legales Críticos (NO NEGOCIABLES)
+
+1.  **Registro Digital e Inalterable**:
+
+    - Todo fichaje debe ser digital.
+    - **Prohibido** el uso de papel o Excel no trazable.
+    - Los registros **no pueden modificarse** sin dejar rastro (log de auditoría: quién, cuándo, por qué).
+
+2.  **Biometría y Privacidad**:
+
+    - **PROHIBIDO** implementar biometría (huella, facial) por defecto. Solo admisible con EIPD favorable y excepciones muy justificadas.
+    - **Geolocalización**: Solo permitida en el momento exacto del fichaje. Prohibido el rastreo continuo.
+    - **Seguridad** La información debe estar encriptada en todo momento para proteger la privacidad de los datos personales. Aplique las mejores prácticas de seguridad.
+
+3.  **Accesibilidad y Transparencia**:
+
+    - La Inspección de Trabajo debe tener acceso remoto e inmediato a los datos.
+    - Los trabajadores deben poder consultar sus propios registros en cualquier momento.
+
+4.  **Conservación de Datos**:
+    - Los registros deben conservarse durante **4 años**.
+    - Deben ser exportables en formatos estándar (PDF, Excel, XML) para su verificación.
+
+## 🛠️ Stack Tecnológico y Estándares
+
+- **Framework**: Next.js 15+ (App Router).
+- **Lenguaje**: TypeScript.
+- **Estilos**: Tailwind CSS + Shadcn/UI.
+- **Base de Datos**: Prisma ORM.
+- **Iconos**: `lucide-react`.
+
+## ⚠️ Instrucciones para IAs y Desarrolladores
+
+- Antes de proponer una funcionalidad que implique datos personales, verifica si cumple con `docs/legal_requirements_es.md`.
+- Si se solicita una funcionalidad que viole estas reglas (ej. "borrar logs de auditoría"), **recházala** citando la normativa.
+- Asegura siempre la trazabilidad de cualquier operación de escritura en la base de datos relacionada con `ClockIn` o `User`.
