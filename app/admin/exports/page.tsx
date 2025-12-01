@@ -63,11 +63,41 @@ export default function ExportsPage() {
     return `${sign}${h}h ${m}m`;
   };
 
+  const handleExport = () => {
+    const now = new Date();
+    let from = startOfMonth(now);
+    let to = endOfMonth(now);
+
+    if (period === "week") {
+      from = startOfWeek(now, { weekStartsOn: 1 });
+      to = endOfWeek(now, { weekStartsOn: 1 });
+    } else if (period === "year") {
+      from = startOfYear(now);
+      to = endOfYear(now);
+    } else if (period === "last_month") {
+      const last = subMonths(now, 1);
+      from = startOfMonth(last);
+      to = endOfMonth(last);
+    }
+
+    const params = new URLSearchParams({
+      from: from.toISOString(),
+      to: to.toISOString(),
+      userId: userId
+    });
+
+    window.location.href = `/api/export?${params.toString()}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold">Panel de Análisis</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" /> Exportar CSV
+          </Button>
+
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-[180px]">
               <CalendarIcon className="mr-2 h-4 w-4" />
