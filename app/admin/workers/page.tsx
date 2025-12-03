@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Plus, Pencil, X } from "lucide-react"
+import { Plus, Pencil, X, QrCode, Download, Mail, Barcode as BarcodeIcon } from "lucide-react"
 import { toast } from "sonner"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import dynamic from "next/dynamic"
+import { generateEAN13 } from "@/lib/ean13"
+
+const Barcode = dynamic(() => import("react-barcode"), { ssr: false })
 
 type User = {
   id: string
@@ -14,6 +19,7 @@ type User = {
   email: string | null
   nfcTagId: string | null
   pin: string | null
+  qrToken: string | null
   role: string
 }
 
@@ -21,7 +27,8 @@ export default function WorkersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [isCreating, setIsCreating] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [formData, setFormData] = useState({ name: "", email: "", nfcTagId: "", pin: "" })
+  const [formData, setFormData] = useState({ name: "", email: "", nfcTagId: "", pin: "", qrToken: "" })
+  const [qrUser, setQrUser] = useState<User | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -39,6 +46,7 @@ export default function WorkersPage() {
       email: user.email || "",
       nfcTagId: user.nfcTagId || "",
       pin: user.pin || "",
+      qrToken: user.qrToken || "",
     })
     setIsCreating(true)
   }
@@ -46,7 +54,13 @@ export default function WorkersPage() {
   const handleCancel = () => {
     setIsCreating(false)
     setEditingUser(null)
-    setFormData({ name: "", email: "", nfcTagId: "", pin: "" })
+    setFormData({ name: "", email: "", nfcTagId: "", pin: "", qrToken: "" })
+  }
+
+  const handleGenerateNewQR = () => {
+    const newToken = generateEAN13()
+    setFormData(prev => ({ ...prev, qrToken: newToken }))
+    toast.success("Código de Barras generado")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,6 +90,12 @@ export default function WorkersPage() {
     }
   }
 
+  const downloadBarcode = () => {
+    // TODO: Implement barcode download (SVG to Image)
+    // For now, we can print or use a library to convert SVG to Canvas
+    window.print()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -93,7 +113,7 @@ export default function WorkersPage() {
             <CardTitle>{editingUser ? "Editar Trabajador" : "Añadir Trabajador"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nombre Completo</Label>
@@ -127,7 +147,48 @@ export default function WorkersPage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
+
+              <div className="border-t pt-6">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex items-center justify-between w-full">
+                    <Label className="text-lg font-semibold">Credenciales de Acceso (QR y Código de Barras)</Label>
+                    <Button type="button" variant="secondary" onClick={handleGenerateNewQR}>
+                      <QrCode className="mr-2 h-4 w-4" /> Generar Nuevos Códigos
+                    </Button>
+                  </div>
+
+                  {formData.qrToken ? (
+                    <div className="flex flex-col items-center gap-6 w-full bg-muted/30 p-6 rounded-lg border border-dashed">
+                      <div className="flex flex-col items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Código de Barras (EAN-13)</Label>
+                        <div className="bg-white p-4 rounded-lg shadow-sm">
+                          <Barcode value={formData.qrToken} format="EAN13" width={2} height={60} fontSize={16} />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 w-full max-w-md">
+                        <Button type="button" variant="outline" className="flex-1" onClick={downloadBarcode}>
+                          <Download className="mr-2 h-4 w-4" /> Imprimir
+                        </Button>
+                        <Button type="button" variant="outline" className="flex-1" asChild disabled={!formData.email}>
+                          <a href={`mailto:${formData.email}?subject=Tus Credenciales de Acceso&body=Adjunto encontrarás tus códigos de acceso.`}>
+                            <Mail className="mr-2 h-4 w-4" /> Enviar Email
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-32 w-full bg-muted/30 rounded-lg border border-dashed text-muted-foreground">
+                      <div className="flex gap-2">
+                        <BarcodeIcon className="h-8 w-8 mb-2 opacity-50" />
+                      </div>
+                      <p>Genera un código de barras para este trabajador</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={handleCancel}>Cancelar</Button>
                 <Button type="submit">Guardar</Button>
               </div>
@@ -149,6 +210,9 @@ export default function WorkersPage() {
                   <p>NFC: {user.nfcTagId || "No asignado"}</p>
                   <p>PIN: {user.pin ? "****" : "No asignado"}</p>
                 </div>
+                <Button variant="outline" size="icon" onClick={() => setQrUser(user)} title="Ver Códigos">
+                  <BarcodeIcon className="h-4 w-4" />
+                </Button>
                 <Button variant="outline" size="icon" onClick={() => handleEdit(user)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -157,6 +221,46 @@ export default function WorkersPage() {
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!qrUser} onOpenChange={(open: boolean) => !open && setQrUser(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Credenciales de Acceso</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center space-y-6 py-4">
+            <div className="flex flex-col md:flex-row gap-8 items-center justify-center w-full">
+              <div className="flex flex-col items-center gap-2">
+                <Label className="font-semibold">Código de Barras (EAN-13)</Label>
+                {qrUser?.qrToken ? (
+                  <div className="bg-white p-6 border rounded-lg">
+                    <Barcode value={qrUser.qrToken} format="EAN13" width={2} height={80} fontSize={18} />
+                  </div>
+                ) : (
+                  <div className="h-24 flex items-center justify-center text-muted-foreground">
+                    Sin código asignado
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <p className="text-center text-sm text-muted-foreground max-w-md">
+              Estos códigos son únicos para {qrUser?.name}.<br />
+              Pueden usarse para fichar en el kiosco mediante cámara o lector láser.
+            </p>
+
+            <div className="flex gap-2 w-full max-w-md">
+              <Button className="flex-1" onClick={downloadBarcode}>
+                <Download className="mr-2 h-4 w-4" /> Imprimir
+              </Button>
+              <Button className="flex-1" variant="outline" asChild disabled={!qrUser?.email}>
+                <a href={`mailto:${qrUser?.email}?subject=Tus Credenciales de Acceso&body=Adjunto encontrarás tus códigos de acceso.`}>
+                  <Mail className="mr-2 h-4 w-4" /> Enviar Email
+                </a>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

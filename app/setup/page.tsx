@@ -1,36 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FileBrowser } from "@/components/setup/file-browser";
-import { initializeDatabase } from "./actions";
-import { Database, FolderOpen, Loader2 } from "lucide-react";
+import { createNewDatabase, configureDatabase } from "./actions";
+import { Database, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 export default function SetupPage() {
     const [mode, setMode] = useState<"select" | "create" | null>(null);
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
 
     const handleCreate = async () => {
         setLoading(true);
         try {
-            const result = await initializeDatabase();
-            if (result.success) {
-                toast.success("Base de datos creada correctamente");
-                toast.info("Reiniciando aplicación...");
-                // Force refresh after delay
-                setTimeout(() => {
-                    window.location.href = "/";
-                }, 2000);
-            } else {
-                toast.error(result.message || "Error al crear la base de datos");
-            }
+            toast.info("Creando base de datos...");
+            await createNewDatabase();
+            toast.success("Base de datos creada correctamente");
         } catch (error) {
-            toast.error("Error inesperado");
-        } finally {
+            toast.error("Error al crear la base de datos");
             setLoading(false);
         }
     };
@@ -38,76 +27,68 @@ export default function SetupPage() {
     const handleSelect = async (path: string) => {
         setLoading(true);
         try {
-            const result = await initializeDatabase(path);
-            if (result.success) {
-                toast.success("Base de datos configurada");
-                setTimeout(() => {
-                    window.location.href = "/";
-                }, 1500);
-            } else {
-                toast.error(result.message || "Error al configurar");
-            }
+            toast.info("Configurando base de datos...");
+            await configureDatabase(path);
+            toast.success("Base de datos configurada correctamente");
         } catch (error) {
-            toast.error("Error inesperado");
-        } finally {
+            toast.error("Error al configurar la base de datos");
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-            <Card className="w-full max-w-2xl bg-zinc-900 border-zinc-800 text-white">
+        <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
+            <Card className="w-full max-w-2xl">
                 <CardHeader>
-                    <CardTitle className="text-2xl">Configuración Inicial</CardTitle>
+                    <CardTitle className="text-2xl">Configuración de Base de Datos</CardTitle>
                     <CardDescription>
-                        No se ha detectado una base de datos configurada. Por favor, selecciona una opción.
+                        No se ha encontrado la base de datos en la raíz del proyecto. Por favor, selecciona una existente o crea una nueva.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-6">
                     {!mode && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Button
                                 variant="outline"
-                                className="h-32 flex flex-col gap-4 bg-transparent text-white hover:bg-zinc-800 hover:text-white border-zinc-700"
-                                onClick={() => setMode("create")}
+                                className="h-32 flex flex-col gap-4 text-lg"
+                                onClick={() => setMode("select")}
                             >
-                                <Database className="h-8 w-8" />
-                                <span className="text-lg">Crear Nueva BBDD</span>
+                                <Search className="h-8 w-8" />
+                                Localizar Existente
                             </Button>
                             <Button
                                 variant="outline"
-                                className="h-32 flex flex-col gap-4 bg-transparent text-white hover:bg-zinc-800 hover:text-white border-zinc-700"
-                                onClick={() => setMode("select")}
+                                className="h-32 flex flex-col gap-4 text-lg"
+                                onClick={() => setMode("create")}
                             >
-                                <FolderOpen className="h-8 w-8" />
-                                <span className="text-lg">Seleccionar Existente</span>
+                                <Plus className="h-8 w-8" />
+                                Crear Nueva
                             </Button>
-                        </div>
-                    )}
-
-                    {mode === "create" && (
-                        <div className="text-center space-y-4">
-                            <p className="text-zinc-400">
-                                Se creará una nueva base de datos local (dev.db) y se aplicará el esquema inicial.
-                            </p>
-                            <div className="flex justify-center gap-4">
-                                <Button variant="ghost" onClick={() => setMode(null)} disabled={loading}>
-                                    Atrás
-                                </Button>
-                                <Button onClick={handleCreate} disabled={loading}>
-                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Crear e Iniciar
-                                </Button>
-                            </div>
                         </div>
                     )}
 
                     {mode === "select" && (
                         <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-lg font-medium">Seleccionar Archivo .db</h3>
+                                <Button variant="ghost" onClick={() => setMode(null)}>Volver</Button>
+                            </div>
                             <FileBrowser onSelect={handleSelect} />
-                            <div className="flex justify-start">
-                                <Button variant="ghost" onClick={() => setMode(null)} disabled={loading}>
-                                    Atrás
+                        </div>
+                    )}
+
+                    {mode === "create" && (
+                        <div className="space-y-4 text-center py-8">
+                            <Database className="h-16 w-16 mx-auto text-muted-foreground" />
+                            <p className="text-muted-foreground">
+                                Se creará una nueva base de datos SQLite (dev.db) en la raíz del proyecto y se ejecutarán las migraciones necesarias.
+                            </p>
+                            <div className="flex justify-center gap-4">
+                                <Button variant="outline" onClick={() => setMode(null)} disabled={loading}>
+                                    Cancelar
+                                </Button>
+                                <Button onClick={handleCreate} disabled={loading}>
+                                    {loading ? "Creando..." : "Crear Base de Datos"}
                                 </Button>
                             </div>
                         </div>

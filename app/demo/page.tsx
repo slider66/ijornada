@@ -8,7 +8,7 @@ import { LogIn, LogOut, User, Clock } from "lucide-react";
 import FlipClock from "@/components/ui/flip-clock";
 
 interface Alert {
-  id: number;
+  id: number | string;
   variant: "success" | "warning" | "info" | "error";
   title: string;
   description: string;
@@ -26,14 +26,14 @@ export default function DemoPage() {
   const addAlert = (type: "in" | "out") => {
     const id = Date.now();
     const isEntry = type === "in";
-    
+
     const newAlert: Alert = {
       id,
       variant: "success",
       styleVariant: "filled",
       title: isEntry ? "¡Bienvenido/a!" : "¡Hasta pronto!",
-      description: isEntry 
-        ? `Entrada registrada correctamente a las ${new Date().toLocaleTimeString()}` 
+      description: isEntry
+        ? `Entrada registrada correctamente a las ${new Date().toLocaleTimeString()}`
         : `Salida registrada correctamente a las ${new Date().toLocaleTimeString()}`,
     };
 
@@ -45,7 +45,7 @@ export default function DemoPage() {
     }, 5000);
   };
 
-  const handleClose = (id: number) => {
+  const handleClose = (id: number | string) => {
     setAlerts((prev) => prev.filter((alert) => alert.id !== id));
   };
 
@@ -58,14 +58,14 @@ export default function DemoPage() {
 
       {/* Content Container */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-6">
-        
+
         {/* Header / Clock */}
         <div className="mb-12 flex flex-col items-center space-y-6">
           <div className="rounded-full bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-blue-400 ring-1 ring-inset ring-blue-500/20">
             Modo Demostración
           </div>
           <div className="scale-75 sm:scale-100">
-             <FlipClock />
+            <FlipClock />
           </div>
           <p className="text-zinc-400">Seleccione una acción para registrar su jornada</p>
         </div>
@@ -120,7 +120,10 @@ export default function DemoPage() {
             {alerts.map((alert) => (
               <AlertToast
                 key={alert.id}
-                {...alert}
+                variant={alert.variant}
+                styleVariant={alert.styleVariant}
+                title={alert.title}
+                description={alert.description}
                 onClose={() => handleClose(alert.id)}
                 className="shadow-2xl backdrop-blur-md"
               />

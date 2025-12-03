@@ -85,24 +85,24 @@ const iconMap = {
 
 // Define icon color classes
 const iconColorClasses: Record<string, Record<string, string>> = {
-    default: {
-        success: "text-green-500",
-        warning: "text-yellow-500",
-        info: "text-blue-500",
-        error: "text-red-500",
-    },
-    filled: {
-        success: "text-success-foreground",
-        warning: "text-warning-foreground",
-        info: "text-info-foreground",
-        error: "text-destructive-foreground",
-    },
+  default: {
+    success: "text-green-500",
+    warning: "text-yellow-500",
+    info: "text-blue-500",
+    error: "text-red-500",
+  },
+  filled: {
+    success: "text-success-foreground",
+    warning: "text-warning-foreground",
+    info: "text-info-foreground",
+    error: "text-destructive-foreground",
+  },
 };
 
 
 export interface AlertToastProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof alertToastVariants> {
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onAnimationStart" | "onDrag" | "onDragEnd" | "onDragEnter" | "onDragExit" | "onDragLeave" | "onDragOver" | "onDragStart" | "onDrop">,
+  VariantProps<typeof alertToastVariants> {
   /** The title of the alert. */
   title: string;
   /** A more detailed description for the alert. */
@@ -141,7 +141,7 @@ const AlertToast = React.forwardRef<HTMLDivElement, AlertToastProps>(
           <p className="text-sm font-semibold">{title}</p>
           <p className="text-sm opacity-90">{description}</p>
         </div>
-        
+
         {/* Close Button */}
         <div className="flex-shrink-0">
           <button
@@ -149,7 +149,7 @@ const AlertToast = React.forwardRef<HTMLDivElement, AlertToastProps>(
             aria-label="Close"
             className={cn(
               "p-1 rounded-full opacity-80 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2",
-               styleVariant === 'default' ? "text-foreground/70 hover:bg-muted" : "hover:bg-black/20"
+              styleVariant === 'default' ? "text-foreground/70 hover:bg-muted" : "hover:bg-black/20"
             )}
           >
             <X className="h-5 w-5" />

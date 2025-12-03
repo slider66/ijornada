@@ -18,63 +18,63 @@ const initialAlerts = [
 
 
 export default function AlertToastDemo() {
-  const [alerts, setAlerts] = React.useState(initialAlerts);
+  const [alerts, setAlerts] = React.useState<typeof initialAlerts[number][]>(Array.from(initialAlerts));
 
   const handleClose = (id: number) => {
     setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== id));
   };
 
   const resetAlerts = () => {
-    setAlerts(initialAlerts);
+    setAlerts(Array.from(initialAlerts));
   }
 
   return (
     <div className="w-full min-h-screen p-8 space-y-8 bg-background">
-       <div className="flex justify-center">
-            <Button onClick={resetAlerts} disabled={alerts.length === initialAlerts.length}>
-                Reset Alerts
-            </Button>
+      <div className="flex justify-center">
+        <Button onClick={resetAlerts} disabled={alerts.length === initialAlerts.length}>
+          Reset Alerts
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 place-items-start max-w-4xl mx-auto">
+        {/* Filled Style Column */}
+        <div className="space-y-4 w-full max-w-sm">
+          <h2 className="text-xl font-bold text-center mb-4">Filled Variant</h2>
+          <AnimatePresence mode="popLayout">
+            {alerts
+              .filter(a => a.styleVariant === 'filled')
+              .map(({ id, variant, title, description, styleVariant }) => (
+                <AlertToast
+                  key={id}
+                  variant={variant}
+                  styleVariant={styleVariant}
+                  title={title}
+                  description={description}
+                  onClose={() => handleClose(id)}
+                />
+              ))}
+          </AnimatePresence>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 place-items-start max-w-4xl mx-auto">
-            {/* Filled Style Column */}
-            <div className="space-y-4 w-full max-w-sm">
-                <h2 className="text-xl font-bold text-center mb-4">Filled Variant</h2>
-                <AnimatePresence mode="popLayout">
-                {alerts
-                    .filter(a => a.styleVariant === 'filled')
-                    .map(({ id, variant, title, description, styleVariant }) => (
-                    <AlertToast
-                        key={id}
-                        variant={variant}
-                        styleVariant={styleVariant}
-                        title={title}
-                        description={description}
-                        onClose={() => handleClose(id)}
-                    />
-                    ))}
-                </AnimatePresence>
-            </div>
-            
-            {/* Default Style Column */}
-            <div className="space-y-4 w-full max-w-sm">
-                <h2 className="text-xl font-bold text-center mb-4">Default Variant</h2>
-                <AnimatePresence mode="popLayout">
-                {alerts
-                    .filter(a => a.styleVariant === 'default')
-                    .map(({ id, variant, title, description, styleVariant }) => (
-                    <AlertToast
-                        key={id}
-                        variant={variant}
-                        styleVariant={styleVariant}
-                        title={title}
-                        description={description}
-                        onClose={() => handleClose(id)}
-                    />
-                    ))}
-                </AnimatePresence>
-            </div>
+        {/* Default Style Column */}
+        <div className="space-y-4 w-full max-w-sm">
+          <h2 className="text-xl font-bold text-center mb-4">Default Variant</h2>
+          <AnimatePresence mode="popLayout">
+            {alerts
+              .filter(a => a.styleVariant === 'default')
+              .map(({ id, variant, title, description, styleVariant }) => (
+                <AlertToast
+                  key={id}
+                  variant={variant}
+                  styleVariant={styleVariant}
+                  title={title}
+                  description={description}
+                  onClose={() => handleClose(id)}
+                />
+              ))}
+          </AnimatePresence>
         </div>
+      </div>
     </div>
   );
 }

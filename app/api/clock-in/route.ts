@@ -4,7 +4,7 @@ import { z } from "zod"
 
 const clockInSchema = z.object({
   identifier: z.string().min(1),
-  method: z.enum(["WEB", "NFC", "FINGERPRINT", "PIN"]),
+  method: z.enum(["WEB", "NFC", "FINGERPRINT", "PIN", "QR"]),
   type: z.enum(["IN", "OUT"]),
   photoUrl: z.string().optional(),
   location: z.string().optional(),
@@ -15,13 +15,14 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { identifier, method, type, photoUrl, location } = clockInSchema.parse(body)
 
-    // Verify user exists by ID, NFC, or PIN
+    // Verify user exists by ID, NFC, PIN, or QR
     const user = await prisma.user.findFirst({
       where: {
         OR: [
           { id: identifier },
           { nfcTagId: identifier },
           { pin: identifier },
+          { qrToken: identifier },
         ],
       },
     })

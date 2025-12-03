@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { generateEAN13 } from "@/lib/ean13"
 
 const userSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().optional().or(z.literal("")),
   nfcTagId: z.string().optional(),
   pin: z.string().optional(),
+  qrToken: z.string().optional(),
   role: z.string().default("USER"),
 })
 
@@ -29,6 +31,7 @@ export async function POST(req: Request) {
       email: data.email || null,
       pin: data.pin || null,
       nfcTagId: data.nfcTagId || null,
+      qrToken: data.qrToken || generateEAN13(),
     }
 
     const user = await prisma.user.create({
@@ -57,6 +60,7 @@ export async function PUT(req: Request) {
       email: data.email || null,
       pin: data.pin || null,
       nfcTagId: data.nfcTagId || null,
+      qrToken: data.qrToken || undefined, // Only update if provided, otherwise keep existing (handled by Prisma if undefined? No, need to be careful)
     }
 
     const user = await prisma.user.update({

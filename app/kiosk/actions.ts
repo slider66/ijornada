@@ -102,3 +102,89 @@ export async function verifyPin(pin: string): Promise<PinVerificationResult> {
         return { success: false, message: "Error del sistema. Inténtalo de nuevo.", sound: "error" };
     }
 }
+
+export async function verifyQr(token: string): Promise<PinVerificationResult> {
+    if (!token) {
+        return { success: false, message: "Código QR inválido.", sound: "error" };
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { qrToken: token },
+            include: {
+                clockIns: {
+                    orderBy: { timestamp: "desc" },
+                    take: 1,
+                },
+                schedules: {
+                    include: { slots: true }
+                }
+            },
+        });
+
+        if (!user) {
+            return { success: false, message: "Código QR no reconocido.", sound: "error" };
+        }
+
+        // Determine type based on last clock-in
+        const lastClockIn = user.clockIns[0];
+        const type = lastClockIn?.type === "IN" ? "OUT" : "IN";
+        const now = new Date();
+
+        // Check for specific audio feedback based on schedule
+        let sound: "success" | "enter_correct" | "exit_correct" | "error" = "success";
+
+        // Find schedule for today (0=Sunday, 1=Monday, etc.)
+        const todayDay = now.getDay();
+        const schedule = user.schedules.find(s => s.dayOfWeek === todayDay);
+
+        if (schedule && schedule.slots.length > 0) {
+            const toleranceMs = 60 * 60 * 1000;
+            const currentTimeMs = now.getHours() * 3600000 + now.getMinutes() * 60000;
+
+            const isCorrectEntry = schedule.slots.some(slot => {
+                const [h, m] = slot.startTime.split(':').map(Number);
+                const slotTimeMs = h * 3600000 + m * 60000;
+                return Math.abs(currentTimeMs - slotTimeMs) <= toleranceMs;
+            });
+
+            const isCorrectExit = schedule.slots.some(slot => {
+                const [h, m] = slot.endTime.split(':').map(Number);
+                const slotTimeMs = h * 3600000 + m * 60000;
+                return Math.abs(currentTimeMs - slotTimeMs) <= toleranceMs;
+            });
+
+            if (type === "IN" && isCorrectEntry) {
+                sound = "enter_correct";
+            } else if (type === "OUT" && isCorrectExit) {
+                sound = "exit_correct";
+            }
+        } else {
+            if (type === "IN") sound = "enter_correct";
+            if (type === "OUT") sound = "exit_correct";
+        }
+
+        // Create new clock-in record
+        await prisma.clockIn.create({
+            data: {
+                userId: user.id,
+                type,
+                method: "QR",
+                timestamp: now,
+            },
+        });
+
+        revalidatePath("/admin");
+
+        return {
+            success: true,
+            user: { name: user.name },
+            type,
+            timestamp: now.toLocaleTimeString(),
+            sound
+        };
+    } catch (error) {
+        console.error("Error verifying QR:", error);
+        return { success: false, message: "Error del sistema. Inténtalo de nuevo.", sound: "error" };
+    }
+}
