@@ -15,8 +15,8 @@ export type PinVerificationResult = {
 };
 
 export async function verifyPin(pin: string): Promise<PinVerificationResult> {
-    if (!pin || pin.length < 7 || !/^\d+$/.test(pin)) {
-        return { success: false, message: "PIN inválido. Debe tener al menos 7 dígitos.", sound: "error" };
+    if (!pin || pin.length < 4 || !/^\d+$/.test(pin)) {
+        return { success: false, message: "PIN inválido. Debe tener al menos 4 dígitos.", sound: "error" };
     }
 
     try {

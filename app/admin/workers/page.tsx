@@ -21,6 +21,7 @@ type User = {
   pin: string | null
   qrToken: string | null
   role: string
+  status?: "working" | "offline"
 }
 
 export default function WorkersPage() {
@@ -202,7 +203,20 @@ export default function WorkersPage() {
           <Card key={user.id}>
             <CardContent className="flex justify-between items-center p-6">
               <div>
-                <h3 className="font-bold text-lg">{user.name}</h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-bold text-lg">{user.name}</h3>
+                  {user.status === "working" ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                      <span className="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                      Trabajando
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                      <span className="w-2 h-2 mr-1.5 bg-orange-500 rounded-full"></span>
+                      No trabajando
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">{user.email || "Sin email"}</p>
               </div>
               <div className="flex items-center gap-4">
@@ -261,6 +275,49 @@ export default function WorkersPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Print Layout */}
+      {qrUser && (
+        <>
+          <style jsx global>{`
+            @media print {
+              @page {
+                size: auto;
+                margin: 0mm;
+              }
+              body * {
+                visibility: hidden;
+              }
+              #printable-card, #printable-card * {
+                visibility: visible;
+              }
+              #printable-card {
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                width: 85.6mm;
+                height: 53.98mm;
+                border: 1px solid #000;
+                border-radius: 3mm;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: white;
+                padding: 4mm;
+                gap: 2mm;
+              }
+            }
+          `}</style>
+          <div id="printable-card" className="hidden">
+            <h2 className="text-xl font-bold text-center leading-tight w-full truncate px-2">{qrUser.name}</h2>
+            {qrUser.qrToken && (
+              <Barcode value={qrUser.qrToken} format="EAN13" width={2} height={50} fontSize={14} displayValue={true} />
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

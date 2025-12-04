@@ -15,6 +15,7 @@ export default function KioskPage() {
   const [pin, setPin] = useState("")
   const [currentTime, setCurrentTime] = useState(new Date())
   const [lastResult, setLastResult] = useState<PinVerificationResult | null>(null)
+  const [isInputLocked, setIsInputLocked] = useState(false)
 
   // Audio refs
   const successInAudio = useRef<HTMLAudioElement | null>(null)
@@ -38,7 +39,7 @@ export default function KioskPage() {
   // Handle physical keyboard input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (status === "loading" || status === "success") return
+      if (isInputLocked || status === "loading") return
 
       if (e.key >= "0" && e.key <= "9") {
         handleNumberClick(e.key)
@@ -51,36 +52,41 @@ export default function KioskPage() {
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [pin, status])
+  }, [pin, status, isInputLocked])
 
   const handleNumberClick = (num: string) => {
-    if (pin.length < 20) {
+    if (pin.length < 9) {
       setPin(prev => prev + num)
-      setStatus("idle")
-      setMessage("Introduce tu PIN")
+      // Only reset status if we are not in success mode (to keep showing the previous success message while typing)
+      if (status !== "success") {
+        setStatus("idle")
+        setMessage("Introduce tu PIN")
+      }
     }
   }
 
   const handleDelete = () => {
     setPin(prev => prev.slice(0, -1))
-    setStatus("idle")
+    if (status !== "success") setStatus("idle")
   }
 
   const handleClear = () => {
     setPin("")
-    setStatus("idle")
+    if (status !== "success") setStatus("idle")
   }
 
   const handleSubmit = async () => {
-    if (pin.length < 7) {
+    if (pin.length < 4) {
       setStatus("error")
-      setMessage("El PIN debe tener al menos 7 dígitos")
+      setMessage("El PIN debe tener al menos 4 dígitos")
       errorAudio.current?.play().catch(() => { })
+      setPin("")
       return
     }
 
     setStatus("loading")
     setMessage("Verificando...")
+    setIsInputLocked(true)
 
     try {
       const result = await verifyPin(pin)
@@ -106,9 +112,14 @@ export default function KioskPage() {
           }
         }
 
-        // Reset after delay
+        // Unlock input after 2 seconds
         setTimeout(() => {
-          setStatus("idle")
+          setIsInputLocked(false)
+        }, 2000)
+
+        // Reset view after 4 seconds
+        setTimeout(() => {
+          setStatus(prev => prev === "success" ? "idle" : prev)
           setLastResult(null)
           setMessage("Introduce tu PIN")
         }, 4000)
@@ -117,11 +128,14 @@ export default function KioskPage() {
         setMessage(result.message || "Error desconocido")
         errorAudio.current?.play().catch(() => { })
         setPin("")
+        setIsInputLocked(false)
       }
     } catch (error) {
       setStatus("error")
       setMessage("Error de conexión")
       errorAudio.current?.play().catch(() => { })
+      setPin("")
+      setIsInputLocked(false)
     }
   }
 
@@ -207,7 +221,7 @@ export default function KioskPage() {
                 variant="outline"
                 className="h-20 text-3xl font-bold bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700 hover:text-white transition-all active:scale-95"
                 onClick={() => handleNumberClick(num.toString())}
-                disabled={status === "loading" || status === "success"}
+                disabled={isInputLocked || status === "loading"}
               >
                 {num}
               </Button>
@@ -216,7 +230,7 @@ export default function KioskPage() {
               variant="destructive"
               className="h-20 bg-red-900/30 border-red-900/50 hover:bg-red-900/50 text-red-500"
               onClick={handleClear}
-              disabled={!pin || status === "loading" || status === "success"}
+              disabled={!pin || isInputLocked || status === "loading"}
             >
               <X className="h-8 w-8" />
             </Button>
@@ -224,7 +238,7 @@ export default function KioskPage() {
               variant="outline"
               className="h-20 text-3xl font-bold bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700 hover:text-white transition-all active:scale-95"
               onClick={() => handleNumberClick("0")}
-              disabled={status === "loading" || status === "success"}
+              disabled={isInputLocked || status === "loading"}
             >
               0
             </Button>
@@ -234,7 +248,7 @@ export default function KioskPage() {
                 status === "loading" && "opacity-50 cursor-not-allowed"
               )}
               onClick={handleSubmit}
-              disabled={!pin || status === "loading" || status === "success"}
+              disabled={!pin || isInputLocked || status === "loading"}
             >
               {status === "loading" ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />

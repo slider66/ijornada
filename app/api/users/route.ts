@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { generateEAN13 } from "@/lib/ean13"
 
+export const dynamic = 'force-dynamic'
+
 const userSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().optional().or(z.literal("")),
@@ -14,9 +16,25 @@ const userSchema = z.object({
 
 export async function GET() {
   const users = await prisma.user.findMany({
+    include: {
+      clockIns: {
+        orderBy: { timestamp: "desc" },
+        take: 1,
+      },
+    },
     orderBy: { name: "asc" },
   })
-  return NextResponse.json(users)
+
+  const usersWithStatus = users.map((user) => {
+    const lastClockIn = user.clockIns[0]
+    const isWorking = lastClockIn && lastClockIn.type === "IN"
+    return {
+      ...user,
+      status: isWorking ? "working" : "offline",
+    }
+  })
+
+  return NextResponse.json(usersWithStatus)
 }
 
 export async function POST(req: Request) {
