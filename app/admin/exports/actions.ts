@@ -8,6 +8,7 @@ export type DashboardStats = {
     totalUsers: number;
     totalWorkedMinutes: number;
     totalExpectedMinutes: number;
+    totalExpectedToDateMinutes: number;
     balanceMinutes: number;
     incidentCounts: {
         vacation: number;
@@ -23,6 +24,7 @@ export type UserStat = {
     userName: string;
     workedMinutes: number;
     expectedMinutes: number;
+    expectedToDateMinutes: number;
     balanceMinutes: number;
     incidents: {
         vacation: number;
@@ -51,6 +53,42 @@ export async function getDashboardStats(
     const startDate = startOfDay(from);
     const endDate = endOfDay(to);
 
+    // Fetch System Config
+    const config = await prisma.systemConfig.findMany({
+        where: { key: { in: ["PILOT_START_DATE", "PRODUCTION_START_DATE"] } }
+    });
+    
+    const configMap = config.reduce((acc, curr) => {
+        acc[curr.key] = curr.value;
+        return acc;
+    }, {} as Record<string, string>);
+
+    const pilotStart = configMap["PILOT_START_DATE"];
+    const prodStart = configMap["PRODUCTION_START_DATE"];
+    
+    // Determine effective start date
+    let effectiveStartDate = startDate;
+    
+    if (prodStart) {
+        const prodDate = startOfDay(new Date(prodStart));
+        if (prodDate > effectiveStartDate) effectiveStartDate = prodDate;
+    } else if (pilotStart) {
+        const pilotDate = startOfDay(new Date(pilotStart));
+        if (pilotDate > effectiveStartDate) effectiveStartDate = pilotDate;
+    }
+
+    // If the effective start date is after the end date, return empty stats
+    if (effectiveStartDate > endDate) {
+        return {
+            totalUsers: 0,
+            totalWorkedMinutes: 0,
+            totalExpectedMinutes: 0,
+            balanceMinutes: 0,
+            incidentCounts: { vacation: 0, sick: 0, absence: 0, other: 0 },
+            userStats: [],
+        };
+    }
+
     // Fetch users
     const whereUser = userId && userId !== "all" ? { id: userId } : {};
     const users = await prisma.user.findMany({
@@ -65,7 +103,7 @@ export async function getDashboardStats(
     // Fetch data for the range
     const clockIns = await prisma.clockIn.findMany({
         where: {
-            timestamp: { gte: startDate, lte: endDate },
+            timestamp: { gte: effectiveStartDate, lte: endDate },
             userId: userId && userId !== "all" ? userId : undefined,
         },
         orderBy: { timestamp: "asc" },
@@ -74,7 +112,7 @@ export async function getDashboardStats(
     const incidents = await prisma.incident.findMany({
         where: {
             startDate: { lte: endDate },
-            endDate: { gte: startDate }, // Overlapping range
+            endDate: { gte: effectiveStartDate }, // Overlapping range
             userId: userId && userId !== "all" ? userId : undefined,
         },
     });
@@ -90,12 +128,14 @@ export async function getDashboardStats(
         totalUsers: users.length,
         totalWorkedMinutes: 0,
         totalExpectedMinutes: 0,
+        totalExpectedToDateMinutes: 0,
         balanceMinutes: 0,
         incidentCounts: { vacation: 0, sick: 0, absence: 0, other: 0 },
         userStats: [],
     };
 
-    const daysInRange = eachDayOfInterval({ start: startDate, end: endDate });
+    const daysInRange = eachDayOfInterval({ start: effectiveStartDate, end: endDate });
+    const now = new Date();
 
     for (const user of users) {
         const userStat: UserStat = {
@@ -103,6 +143,7 @@ export async function getDashboardStats(
             userName: user.name,
             workedMinutes: 0,
             expectedMinutes: 0,
+            expectedToDateMinutes: 0,
             balanceMinutes: 0,
             incidents: { vacation: 0, sick: 0, absence: 0, other: 0 },
             dailyBreakdown: [],
@@ -141,6 +182,9 @@ export async function getDashboardStats(
                         expectedMinutes += (endH * 60 + endM) - (startH * 60 + startM);
                     }
                 }
+            } else if (isHoliday) {
+                // Explicitly 0 for holidays (already handled by default 0, but good for clarity)
+                expectedMinutes = 0;
             }
 
             // 4. Calculate Worked Minutes
@@ -162,6 +206,11 @@ export async function getDashboardStats(
             // Update User Totals
             userStat.workedMinutes += workedMinutes;
             userStat.expectedMinutes += expectedMinutes;
+            
+            // Only add to "Expected To Date" if the day is in the past or today
+            if (day <= endOfDay(now)) {
+                userStat.expectedToDateMinutes += expectedMinutes;
+            }
 
             // Update Incident Counts
             if (activeIncident) {
@@ -191,11 +240,13 @@ export async function getDashboardStats(
             });
         }
 
+        // Balance is calculated against Total Expected (as requested to revert)
         userStat.balanceMinutes = userStat.workedMinutes - userStat.expectedMinutes;
 
         // Add to Global Stats
         stats.totalWorkedMinutes += userStat.workedMinutes;
         stats.totalExpectedMinutes += userStat.expectedMinutes;
+        stats.totalExpectedToDateMinutes += userStat.expectedToDateMinutes;
         stats.balanceMinutes += userStat.balanceMinutes;
         stats.incidentCounts.vacation += userStat.incidents.vacation;
         stats.incidentCounts.sick += userStat.incidents.sick;
@@ -206,4 +257,16 @@ export async function getDashboardStats(
     }
 
     return stats;
+}
+
+export async function resetData() {
+    try {
+        // Delete all clock-ins and incidents
+        await prisma.clockIn.deleteMany({});
+        await prisma.incident.deleteMany({});
+        return { success: true };
+    } catch (error) {
+        console.error("Error resetting data:", error);
+        return { success: false, error: "Failed to reset data" };
+    }
 }

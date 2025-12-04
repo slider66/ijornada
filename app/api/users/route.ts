@@ -21,6 +21,7 @@ export async function GET() {
         orderBy: { timestamp: "desc" },
         take: 1,
       },
+      incidents: true,
     },
     orderBy: { name: "asc" },
   })
@@ -28,9 +29,24 @@ export async function GET() {
   const usersWithStatus = users.map((user) => {
     const lastClockIn = user.clockIns[0]
     const isWorking = lastClockIn && lastClockIn.type === "IN"
+    
+    // Calculate vacation days
+    const vacationDays = user.incidents
+      .filter(i => i.type.toLowerCase().includes("vacaci"))
+      .reduce((acc, curr) => {
+        const start = new Date(curr.startDate);
+        const end = curr.endDate ? new Date(curr.endDate) : start;
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        return acc + diffDays;
+      }, 0);
+
     return {
       ...user,
       status: isWorking ? "working" : "offline",
+      vacationDays,
+      // Remove heavy incidents array from response if not needed
+      incidents: undefined 
     }
   })
 

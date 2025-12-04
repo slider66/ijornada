@@ -218,6 +218,11 @@ export default function WorkersPage() {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">{user.email || "Sin email"}</p>
+                <div className="mt-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                    🏖️ {user.vacationDays || 0} Días de vacaciones
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right text-sm">

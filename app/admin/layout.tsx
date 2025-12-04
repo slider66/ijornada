@@ -24,6 +24,12 @@ export default function AdminLayout({
           <Link href="/admin/exports" className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded">
             <FileText className="h-5 w-5" /> Informes
           </Link>
+          <Link href="/admin/holidays" className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded">
+            <Calendar className="h-5 w-5" /> Festivos
+          </Link>
+          <Link href="/admin/settings" className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded">
+            <Users className="h-5 w-5" /> Configuración
+          </Link>
         </nav>
         <div className="mt-auto pt-8 border-t border-slate-700">
           <Link href="/" className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded text-slate-400">
