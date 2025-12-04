@@ -119,7 +119,8 @@ export async function getDashboardStats(
 
             // 1. Check Incidents
             const activeIncident = incidents.find(
-                (i) =>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (i: any) =>
                     i.userId === user.id &&
                     i.startDate <= endOfDay(day) &&
                     (i.endDate ? i.endDate >= startOfDay(day) : true)

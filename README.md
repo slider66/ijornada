@@ -35,7 +35,7 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
 ### Prerrequisitos
 
 - Node.js 18+
-- npm o pnpm
+- pnpm (Recomendado)
 
 ### Pasos para iniciar
 
@@ -49,8 +49,6 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
 2.  **Instalar dependencias**:
 
     ```bash
-    npm install
-    # o
     pnpm install
     ```
 
@@ -59,27 +57,28 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
 
     ```env
     DATABASE_URL="file:./dev.db"
-    AUTH_SECRET="tu-secreto-generado" # Generar con: npx auth secret
+    AUTH_SECRET="tu-secreto-generado" # Generar con: pnpm dlx auth secret
     ```
 
 4.  **Inicializar la base de datos**:
 
     ```bash
-    npx prisma migrate dev --name init
+    pnpm dlx prisma migrate dev --name init
     ```
 
 5.  **Crear usuario inicial**:
     Actualmente no existe un script de seed ni página de registro pública. Para crear el primer usuario administrador, utiliza Prisma Studio:
 
     ```bash
-    npx prisma studio
+    pnpm dlx prisma studio
     ```
+
     Abre la interfaz web, selecciona el modelo `User` y crea un registro con `role: "ADMIN"`.
 
 6.  **Iniciar el servidor de desarrollo**:
 
     ```bash
-    npm run dev
+    pnpm dev
     ```
 
     La aplicación estará disponible en `http://localhost:3000`.
@@ -104,10 +103,13 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
 ## ⚠️ Notas Importantes
 
 ### Autenticación
+
 El archivo `auth.ts` contiene una configuración base para **NextAuth** con el proveedor de credenciales. **La lógica de autorización (`authorize`) es actualmente un placeholder** y debe ser implementada para validar las credenciales contra la base de datos (comparando hashes de contraseñas, etc.).
 
 ### Base de Datos
+
 El esquema (`prisma/schema.prisma`) define los siguientes modelos principales:
+
 - **User**: Empleados y administradores.
 - **ClockIn**: Registros de fichaje (entrada/salida).
 - **Incident**: Incidencias (vacaciones, bajas).
@@ -123,7 +125,7 @@ El sistema maneja dos roles principales definidos en el modelo de datos:
 
 ## 📝 Scripts Disponibles
 
-- `npm run dev`: Inicia el entorno de desarrollo.
-- `npm run build`: Compila la aplicación para producción.
-- `npm run start`: Inicia la aplicación en modo producción.
-- `npm run lint`: Ejecuta el linter para verificar la calidad del código.
+- `pnpm dev`: Inicia el entorno de desarrollo.
+- `pnpm build`: Compila la aplicación para producción.
+- `pnpm start`: Inicia la aplicación en modo producción.
+- `pnpm lint`: Ejecuta el linter para verificar la calidad del código.
