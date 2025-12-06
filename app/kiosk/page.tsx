@@ -36,23 +36,7 @@ export default function KioskPage() {
     return () => clearInterval(timer)
   }, [])
 
-  // Handle physical keyboard input for PIN
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (status === "loading" || status === "success" || activeTab !== "pin") return
 
-      if (e.key >= "0" && e.key <= "9") {
-        handleNumberClick(e.key)
-      } else if (e.key === "Backspace") {
-        handleDelete()
-      } else if (e.key === "Enter") {
-        handleSubmit()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [pin, status, activeTab])
 
   const handleNumberClick = (num: string) => {
     if (pin.length < 20) {
@@ -119,8 +103,26 @@ export default function KioskPage() {
     }
   }
 
+  // Handle physical keyboard input for PIN
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (status === "loading" || status === "success" || activeTab !== "pin") return
+
+      if (e.key >= "0" && e.key <= "9") {
+        handleNumberClick(e.key)
+      } else if (e.key === "Backspace") {
+        handleDelete()
+      } else if (e.key === "Enter") {
+        handleSubmit()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [pin, status, activeTab])
+
   const handleScan = async (token: string) => {
-    if (status === "loading" || status === "success") return
+    if (status === "loading") return
 
     setStatus("loading")
     setMessage("Verificando Código...")

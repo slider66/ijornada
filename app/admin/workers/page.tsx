@@ -21,6 +21,7 @@ type User = {
   pin: string | null
   qrToken: string | null
   role: string
+  vacationDays?: number
   status?: "working" | "offline"
 }
 
