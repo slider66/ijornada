@@ -85,7 +85,7 @@ export default function KioskPage() {
   const handleSubmit = async () => {
     if (pin.length < 7) {
       setStatus("error")
-      setMessage("El PIN debe tener al menos 7 dígitos")
+      setMessage("El PIN debe tener al menos 4 dígitos")
       errorAudio.current?.play().catch(() => { })
       return
     }
