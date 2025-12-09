@@ -116,6 +116,6 @@ do {
         '4' { Start-Manual }
         'Q' { exit }
         'q' { exit }
-        Default { Write-Warning "Opción no válida" }
+        Default { Write-Warning "Opcion no valida" }
     }
 } until ($false)
