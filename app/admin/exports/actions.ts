@@ -83,6 +83,7 @@ export async function getDashboardStats(
             totalUsers: 0,
             totalWorkedMinutes: 0,
             totalExpectedMinutes: 0,
+            totalExpectedToDateMinutes: 0,
             balanceMinutes: 0,
             incidentCounts: { vacation: 0, sick: 0, absence: 0, other: 0 },
             userStats: [],

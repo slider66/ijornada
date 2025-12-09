@@ -15,6 +15,7 @@ model User {
   nfcTagId  String?  @unique
   qrToken   String?  @unique
   role      String   @default("USER") // USER, ADMIN
+  vacationDays Int   @default(30)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
