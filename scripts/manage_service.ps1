@@ -40,8 +40,48 @@ function Show-Menu {
     Write-Host "2. Desinstalar Servicio"
     Write-Host "3. Ver Estado del Servicio"
     Write-Host "4. Iniciar Servidor Manualmente (Prueba)"
+    Write-Host "5. ACTIVAR Modo Kiosco (Abrir navegador al inicio)"
+    Write-Host "6. DESACTIVAR Modo Kiosco"
     Write-Host "Q. Salir"
     Write-Host ""
+}
+
+function Enable-AutoBrowser {
+    Write-Host "Configurando inicio automatico del navegador..." -ForegroundColor Yellow
+    $StartupDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
+    $ShortcutPath = "$StartupDir\Start-iJornada-Kiosk.bat"
+    
+    $Content = @"
+@echo off
+:: Esperar a que el servicio arranque
+timeout /t 10 /nobreak
+:: Abrir navegador en modo Kiosco (o pestana normal)
+start http://localhost:3000
+"@
+    
+    try {
+        Set-Content -Path $ShortcutPath -Value $Content
+        Write-Host "[EXITO] Navegador configurado para abrirse al iniciar sesion." -ForegroundColor Green
+    }
+    catch {
+        Write-Error "Error al crear el archivo de inicio: $_"
+    }
+    Pause
+}
+
+function Disable-AutoBrowser {
+    Write-Host "Desactivando inicio automatico del navegador..." -ForegroundColor Yellow
+    $StartupDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
+    $ShortcutPath = "$StartupDir\Start-iJornada-Kiosk.bat"
+    
+    if (Test-Path $ShortcutPath) {
+        Remove-Item $ShortcutPath -Force
+        Write-Host "[EXITO] Inicio automatico del navegador desactivado." -ForegroundColor Green
+    }
+    else {
+        Write-Warning "No estaba activado."
+    }
+    Pause
 }
 
 function Install-Service {
@@ -114,6 +154,8 @@ do {
         '2' { Uninstall-Service }
         '3' { Get-ServiceStatus }
         '4' { Start-Manual }
+        '5' { Enable-AutoBrowser }
+        '6' { Disable-AutoBrowser }
         'Q' { exit }
         'q' { exit }
         Default { Write-Warning "Opcion no valida" }
