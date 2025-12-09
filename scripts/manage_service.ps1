@@ -1,4 +1,4 @@
-# Script de Gestión para iJornada Server
+# Script de Gestion para iJornada Server
 # Requiere permisos de Administrador
 
 $ErrorActionPreference = "Stop"
@@ -33,7 +33,7 @@ function Assert-Node {
 function Show-Menu {
     Clear-Host
     Write-Host "==============================" -ForegroundColor Cyan
-    Write-Host "   GESTIÓN IJORNADA SERVER    " -ForegroundColor Cyan
+    Write-Host "   GESTION IJORNADA SERVER    " -ForegroundColor Cyan
     Write-Host "==============================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "1. Instalar Servicio (Tarea Programada Automatico)"
@@ -53,8 +53,8 @@ function Install-Service {
     $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 0) -Priority 7 -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
     
     try {
-        Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Description "Inicia el servidor iJornada automáticamente al arrancar Windows." -Force
-        Write-Host "[EXITO] Servicio instalado correctamente. Se iniciará al reiniciar Windows." -ForegroundColor Green
+        Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Description "Inicia el servidor iJornada automaticamente al arrancar Windows." -Force
+        Write-Host "[EXITO] Servicio instalado correctamente. Se iniciara al reiniciar Windows." -ForegroundColor Green
         
         $startNow = Read-Host "¿Desea iniciar el servicio ahora? (S/N)"
         if ($startNow -eq 'S' -or $startNow -eq 's') {
@@ -86,11 +86,11 @@ function Get-ServiceStatus {
         Write-Host "Estado de la Tarea: " -NoNewline
         Write-Host $task.State -ForegroundColor Green
         
-        Write-Host "Información detallada:"
+        Write-Host "Informacion detallada:"
         $task | Select-Object TaskName, State, Description | Format-List
     }
     catch {
-        Write-Host "El servicio NO está instalado." -ForegroundColor Red
+        Write-Host "El servicio NO esta instalado." -ForegroundColor Red
     }
     Pause
 }
@@ -108,7 +108,7 @@ Assert-Admin
 Assert-Node
 do {
     Show-Menu
-    $userInput = Read-Host "Seleccione una opción"
+    $userInput = Read-Host "Seleccione una opcion"
     switch ($userInput) {
         '1' { Install-Service }
         '2' { Uninstall-Service }
