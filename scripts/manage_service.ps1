@@ -17,6 +17,19 @@ function Assert-Admin {
     }
 }
 
+function Assert-Node {
+    try {
+        $nodeVersion = node -v
+        Write-Host "Node.js detectado: $nodeVersion" -ForegroundColor Green
+    }
+    catch {
+        Write-Error "CRITICO: Node.js no se encuentra en el PATH."
+        Write-Warning "Por favor instale Node.js (https://nodejs.org) y reinicie la terminal."
+        Pause
+        exit
+    }
+}
+
 function Show-Menu {
     Clear-Host
     Write-Host "==============================" -ForegroundColor Cyan
@@ -92,6 +105,7 @@ function Start-Manual {
 
 # Main Loop
 Assert-Admin
+Assert-Node
 do {
     Show-Menu
     $userInput = Read-Host "Seleccione una opción"

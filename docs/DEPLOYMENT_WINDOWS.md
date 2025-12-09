@@ -23,40 +23,45 @@ Antes de configurar el inicio automático, asegúrese de que la aplicación est�
 
 ---
 
-## 2. Opción Recomendada: Usando PM2
+## 2. Instalación Automática (Recomendada)
 
-**PM2** es un gestor de procesos de producción para Node.js. Es la opción más robusta porque maneja reinicios automáticos si la aplicación falla y gestión de logs.
+Hemos incluido un script de gestión (`manage_service.ps1`) que automatiza todo el proceso usando el Programador de Tareas de Windows. Esta es la forma más sencilla de asegurar que la aplicación arranque con el sistema.
 
 ### Pasos:
 
-1.  **Instalar PM2 y el complemento de inicio para Windows:**
-    Ejecute en la terminal (como Administrador):
-    ```bash
-    npm install -g pm2 pm2-windows-startup
+1.  Abra **PowerShell** como Administrador.
+2.  Ejecute el script de gestión:
+    ```powershell
+    cd C:\Proyectos\ijornada\scripts
+    .\manage_service.ps1
     ```
+3.  Seleccione la opción **1** para instalar el servicio.
+4.  ¡Listo! La tarea "iJornada Server" ha sido creada.
 
-2.  **Instalar el servicio de inicio:**
-    ```bash
-    pm2-startup install
-    ```
-    *Nota: Esto registrará PM2 como un servicio de Windows.*
+Este script configura la tarea para:
+*   Iniciarse al arrancar el sistema (sin necesidad de login).
+*   Ejecutarse con privilegios altos.
+*   Reiniciarse automáticamente si falla.
+*   Redirigir la salida a un archivo de log (`server_log.txt`).
 
-3.  **Iniciar la aplicación con PM2:**
-    ```bash
-    pm2 start npm --name "ijornada-server" -- start
-    ```
+---
 
-4.  **Guardar la configuración:**
-    Para asegurar que esta aplicación específica se inicie cuando PM2 arranque:
-    ```bash
-    pm2 save
-    ```
+## 3. Comandos Útiles
 
-### Comandos útiles de PM2:
-- Ver estado: `pm2 status`
-- Ver logs: `pm2 logs ijornada-server`
-- Detener: `pm2 stop ijornada-server`
-- Reiniciar: `pm2 restart ijornada-server`
+Desde el mismo menú del script `manage_service.ps1` puede:
+*   **Ver Estado**: Opción 3. Le dirá si la tarea está "Ready" (Lista) o "Running" (Ejecutándose).
+*   **Desinstalar**: Opción 2. Elimina la tarea programada.
+*   **Prueba Manual**: Opción 4. Inicia el servidor en la consola actual para pruebas rápidas.
+
+---
+
+## 4. Método Manual y PM2 (Alternativas)
+
+Si prefiere otros métodos, consulte las secciones siguientes.
+
+### 4.1 PM2 (Avanzado)
+
+**PM2** es un gestor de procesos de producción para Node.js.
 
 ---
 
