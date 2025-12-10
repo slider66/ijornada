@@ -11,8 +11,9 @@ Antes de configurar el inicio automático, asegúrese de que la aplicación est�
     ```bash
     cd C:\Proyectos\ijornada
     ```
-3.  Construya la aplicación para producción:
+3.  Instale las dependencias y construya la aplicación:
     ```bash
+    npm install
     npm run build
     ```
 4.  Verifique que inicia correctamente de forma manual:

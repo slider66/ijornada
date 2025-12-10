@@ -24,7 +24,7 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
 - **Lenguaje**: [TypeScript](https://www.typescriptlang.org/)
-- **Base de Datos**: [SQLite](https://www.sqlite.org/) (vía [Prisma ORM](https://www.prisma.io/))
+- **Base de Datos**: [PostgreSQL](https://www.postgresql.org/) (vía [Prisma ORM](https://www.prisma.io/))
 - **Estilos**: [Tailwind CSS](https://tailwindcss.com/)
 - **Componentes UI**: [shadcn/ui](https://ui.shadcn.com/)
 - **Autenticación**: [Auth.js (NextAuth)](https://authjs.dev/)
@@ -56,7 +56,7 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
     Crea un archivo `.env` en la raíz del proyecto basándote en el siguiente ejemplo:
 
     ```env
-    DATABASE_URL="file:./dev.db"
+    DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
     AUTH_SECRET="tu-secreto-generado" # Generar con: pnpm dlx auth secret
     ```
 

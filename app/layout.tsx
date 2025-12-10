@@ -27,11 +27,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
         <SetupGuard>
           {children}
         </SetupGuard>
+        <footer className="w-full py-4 text-center text-xs text-muted-foreground border-t mt-auto">
+          <span>slider66 © 2025 | </span>
+          <a
+            href="https://github.com/slider66/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline hover:text-foreground transition-colors"
+          >
+            https://github.com/slider66/
+          </a>
+        </footer>
         <Toaster />
       </body>
     </html>
