@@ -4,19 +4,21 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Calendar as CalendarIcon, Users, Clock, AlertTriangle, Trash2 } from "lucide-react";
+import { Download, Calendar as CalendarIcon, Users, Clock, AlertTriangle, Trash2, FileText, Mail } from "lucide-react";
 import { getDashboardStats, resetData, type DashboardStats } from "./actions";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function ExportsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("month");
   const [userId, setUserId] = useState("all");
-  const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; email?: string }[]>([]);
 
   useEffect(() => {
     // Fetch users for filter
@@ -31,21 +33,7 @@ export default function ExportsPage() {
 
   const loadStats = async () => {
     setLoading(true);
-    const now = new Date();
-    let from = startOfMonth(now);
-    let to = endOfMonth(now);
-
-    if (period === "week") {
-      from = startOfWeek(now, { weekStartsOn: 1 });
-      to = endOfWeek(now, { weekStartsOn: 1 });
-    } else if (period === "year") {
-      from = startOfYear(now);
-      to = endOfYear(now);
-    } else if (period === "last_month") {
-      const last = subMonths(now, 1);
-      from = startOfMonth(last);
-      to = endOfMonth(last);
-    }
+    const { from, to } = getDateRange();
 
     try {
       const data = await getDashboardStats(from, to, userId);
@@ -57,14 +45,7 @@ export default function ExportsPage() {
     }
   };
 
-  const formatDuration = (minutes: number) => {
-    const h = Math.floor(Math.abs(minutes) / 60);
-    const m = Math.abs(minutes) % 60;
-    const sign = minutes < 0 ? "-" : "";
-    return `${sign}${h}h ${m}m`;
-  };
-
-  const handleExport = () => {
+  const getDateRange = () => {
     const now = new Date();
     let from = startOfMonth(now);
     let to = endOfMonth(now);
@@ -80,14 +61,80 @@ export default function ExportsPage() {
       from = startOfMonth(last);
       to = endOfMonth(last);
     }
+    return { from, to };
+  };
 
+  const formatDuration = (minutes: number) => {
+    const h = Math.floor(Math.abs(minutes) / 60);
+    const m = Math.abs(minutes) % 60;
+    const sign = minutes < 0 ? "-" : "";
+    return `${sign}${h}h ${m}m`;
+  };
+
+  const handleExport = (type: "kpi" | "detail") => {
+    const { from, to } = getDateRange();
     const params = new URLSearchParams({
       from: from.toISOString(),
       to: to.toISOString(),
-      userId: userId
+      userId: userId,
+      type: type
+    });
+    window.location.href = `/api/export?${params.toString()}`;
+  };
+
+  const handlePDF = () => {
+    if (!stats) return;
+    const doc = new jsPDF();
+    const { from, to } = getDateRange();
+    const periodStr = `${format(from, "dd/MM/yyyy")} - ${format(to, "dd/MM/yyyy")}`;
+
+    stats.userStats.forEach((user, index) => {
+      if (index > 0) doc.addPage();
+
+      doc.setFontSize(16);
+      doc.text(`Registro de Jornada: ${user.userName}`, 14, 20);
+      doc.setFontSize(10);
+      doc.text(`Periodo: ${periodStr}`, 14, 28);
+      doc.text(`Total Trabajado: ${formatDuration(user.workedMinutes)}`, 14, 34);
+
+      const rows = user.dailyBreakdown?.map(day => [
+        day.date,
+        day.dayName,
+        day.intervals.map(i => `${i.start}-${i.end}`).join(" | ") || (day.status !== "ok" && day.status !== "missing" ? day.status : ""),
+        formatDuration(day.workedMinutes)
+      ]) || [];
+
+      autoTable(doc, {
+        startY: 40,
+        head: [['Fecha', 'Día', 'Entrada / Salida', 'Total']],
+        body: rows,
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY + 40;
+      doc.text("Firma del Trabajador:", 14, finalY);
+      doc.line(50, finalY, 150, finalY); // Signature line
     });
 
-    window.location.href = `/api/export?${params.toString()}`;
+    doc.save(`reporte-jornada-${userId}.pdf`);
+  };
+
+  const handleEmail = () => {
+    if (userId === "all") {
+      toast.error("Selecciona un trabajador específico para enviar email.");
+      return;
+    }
+    const user = users.find(u => u.id === userId);
+    if (!user || !user.email) {
+      toast.error("El trabajador no tiene email configurado.");
+      return;
+    }
+
+    const { from, to } = getDateRange();
+    const subject = `Registro de Jornada ${format(from, "dd/MM")}-${format(to, "dd/MM")}`;
+    const body = `Hola ${user.name},\n\nAdjunto encontrarás el registro de tu jornada. Por favor, revísalo y fírmalo.\n\nGracias.`;
+
+    window.location.href = `mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    toast.info("Se ha abierto tu cliente de correo. Recuerda ADJUNTAR el PDF manualmente.");
   };
 
   const handleReset = async () => {
@@ -108,14 +155,10 @@ export default function ExportsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold">Panel de Análisis</h1>
-        <div className="flex gap-2 items-center">
-
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" /> Exportar CSV
-          </Button>
+        <div className="flex flex-wrap gap-2 items-center">
 
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[150px]">
               <CalendarIcon className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Periodo" />
             </SelectTrigger>
@@ -141,6 +184,21 @@ export default function ExportsPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExport('kpi')} title="Descargar análisis de equipo">
+              <Download className="mr-2 h-4 w-4" /> KPIs
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport('detail')} title="Descargar registro detallado para firma">
+              <FileText className="mr-2 h-4 w-4" /> Registro
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePDF} title="Generar PDF para imprimir y firmar">
+              <FileText className="mr-2 h-4 w-4" /> PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleEmail} disabled={userId === 'all'} title="Enviar email al trabajador">
+              <Mail className="mr-2 h-4 w-4" /> Email
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -273,7 +331,7 @@ export default function ExportsPage() {
                       <tr>
                         <th className="px-4 py-3">Fecha</th>
                         <th className="px-4 py-3">Día</th>
-                        <th className="px-4 py-3">Estado</th>
+                        <th className="px-4 py-3">Entrada / Salida</th>
                         <th className="px-4 py-3">Trabajado</th>
                         <th className="px-4 py-3">Balance</th>
                       </tr>
@@ -283,19 +341,22 @@ export default function ExportsPage() {
                         <tr key={day.date} className="border-b hover:bg-zinc-50/50">
                           <td className="px-4 py-3">{day.date}</td>
                           <td className="px-4 py-3 capitalize">{day.dayName}</td>
-                          <td className="px-4 py-3">
-                            {day.status === "incident" ? (
-                              <span className="text-orange-600 font-medium">{day.incidentType}</span>
-                            ) : day.status === "holiday" ? (
-                              <span className="text-blue-600 font-medium">Festivo</span>
-                            ) : day.status === "missing" ? (
-                              <span className="text-red-600 font-medium">Falta horas</span>
-                            ) : day.status === "extra" ? (
-                              <span className="text-green-600 font-medium">Extra</span>
-                            ) : day.status === "off" ? (
-                              <span className="text-zinc-400">Libre</span>
-                            ) : (
-                              <span className="text-zinc-600">Correcto</span>
+                          <td className="px-4 py-3 text-zinc-700">
+                            {day.intervals.map((i, idx) => (
+                              <span key={idx} className="block">{i.start} - {i.end}</span>
+                            ))}
+                            {day.intervals.length === 0 && (
+                              <>
+                                {day.status === "incident" ? (
+                                  <span className="text-orange-600 font-medium">{day.incidentType}</span>
+                                ) : day.status === "holiday" ? (
+                                  <span className="text-blue-600 font-medium">Festivo</span>
+                                ) : day.status === "missing" ? (
+                                  <span className="text-red-600 font-medium">Falta asistencia</span>
+                                ) : day.status === "off" ? (
+                                  <span className="text-zinc-400">Libre</span>
+                                ) : null}
+                              </>
                             )}
                           </td>
                           <td className="px-4 py-3">{formatDuration(day.workedMinutes)}</td>
