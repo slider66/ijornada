@@ -69,10 +69,22 @@ export async function getDashboardStats(
     // Determine effective start date
     let effectiveStartDate = startDate;
     let prodDate: Date | null = null;
+    const now = new Date();
 
     if (prodStart) {
         prodDate = startOfDay(new Date(prodStart));
-        if (prodDate > effectiveStartDate) effectiveStartDate = prodDate;
+        // Only use production date if it's in the past or today (active)
+        // OR if there is no pilot date
+        if (prodDate <= endOfDay(now)) {
+            if (prodDate > effectiveStartDate) effectiveStartDate = prodDate;
+        } else if (pilotStart) {
+            // Production is in future, fall back to Pilot
+            const pilotDate = startOfDay(new Date(pilotStart));
+            if (pilotDate > effectiveStartDate) effectiveStartDate = pilotDate;
+        } else {
+            // Production in future, no pilot -> use prod date (stats will be empty)
+            if (prodDate > effectiveStartDate) effectiveStartDate = prodDate;
+        }
     } else if (pilotStart) {
         const pilotDate = startOfDay(new Date(pilotStart));
         if (pilotDate > effectiveStartDate) effectiveStartDate = pilotDate;
@@ -137,7 +149,7 @@ export async function getDashboardStats(
     };
 
     const daysInRange = eachDayOfInterval({ start: effectiveStartDate, end: endDate });
-    const now = new Date();
+
 
     for (const user of users) {
         const userStat: UserStat = {
@@ -176,8 +188,8 @@ export async function getDashboardStats(
             let expectedMinutes = 0;
             const isPilotDay = !prodDate || day < prodDate;
 
-            // Only expect hours if no incident and no holiday and NOT pilot day
-            if (!isPilotDay && !activeIncident && !isHoliday) {
+            // Only expect hours if no incident and no holiday (calculate even in pilot)
+            if (!activeIncident && !isHoliday) {
                 const schedule = user.schedules.find((s) => s.dayOfWeek === dayOfWeek);
                 if (schedule) {
                     for (const slot of schedule.slots) {
@@ -220,7 +232,7 @@ export async function getDashboardStats(
             if (activeIncident) {
                 const type = activeIncident.type.toLowerCase();
                 if (type.includes("vacaci")) userStat.incidents.vacation++;
-                else if (type.includes("baja") || type.includes("enfermedad")) userStat.incidents.sick++;
+                else if (type.includes("baja") || type.includes("enfermedad") || type.includes("accidente")) userStat.incidents.sick++;
                 else if (type.includes("falta") || type.includes("ausencia")) userStat.incidents.absence++;
                 else userStat.incidents.other++;
             }
@@ -233,19 +245,25 @@ export async function getDashboardStats(
             else if (workedMinutes < expectedMinutes) status = "missing";
             else if (workedMinutes > expectedMinutes) status = "extra";
 
+            // Update Balance (Accumulate only if NOT Pilot)
+            // Even though we show expected/worked for Pilot, the Balance (Debt) only accumulates in Production.
+            if (!isPilotDay) {
+                userStat.balanceMinutes += (workedMinutes - expectedMinutes);
+            }
+
             userStat.dailyBreakdown?.push({
                 date: dateStr,
                 dayName: format(day, "EEEE", { locale: es }),
                 workedMinutes,
                 expectedMinutes,
-                balanceMinutes: workedMinutes - expectedMinutes,
+                balanceMinutes: workedMinutes - expectedMinutes, // Show theoretical balance for day
                 status,
                 incidentType: activeIncident?.type,
             });
         }
 
-        // Balance is calculated against Total Expected (as requested to revert)
-        userStat.balanceMinutes = userStat.workedMinutes - userStat.expectedMinutes;
+        // Balance is calculated cumulatively above (excluding pilot)
+
 
         // Add to Global Stats
         stats.totalWorkedMinutes += userStat.workedMinutes;
