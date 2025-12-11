@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Calendar as CalendarIcon, Users, Clock, AlertTriangle, Trash2, FileText, Mail } from "lucide-react";
-import { getDashboardStats, resetData, type DashboardStats } from "./actions";
+import { getDashboardStats, type DashboardStats } from "./actions";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -137,19 +137,7 @@ export default function ExportsPage() {
     toast.info("Se ha abierto tu cliente de correo. Recuerda ADJUNTAR el PDF manualmente.");
   };
 
-  const handleReset = async () => {
-    if (confirm("¿Estás seguro? Esto borrará TODOS los fichajes e incidencias. Esta acción no se puede deshacer.")) {
-      setLoading(true);
-      const result = await resetData();
-      if (result.success) {
-        toast.success("Datos reiniciados correctamente");
-        loadStats();
-      } else {
-        toast.error("Error al reiniciar datos");
-      }
-      setLoading(false);
-    }
-  };
+
 
   return (
     <div className="space-y-6">
@@ -374,21 +362,7 @@ export default function ExportsPage() {
         </>
       ) : null}
 
-      <Card className="border-red-200 bg-red-50/50">
-        <CardHeader>
-          <CardTitle className="text-red-800 flex items-center gap-2 text-lg">
-            <AlertTriangle className="h-5 w-5" /> Zona de Peligro
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between">
-          <p className="text-sm text-red-600">
-            Estas acciones son destructivas y borrarán todos los datos de prueba.
-          </p>
-          <Button variant="destructive" onClick={handleReset}>
-            <Trash2 className="mr-2 h-4 w-4" /> Reset Datos
-          </Button>
-        </CardContent>
-      </Card>
+
 
     </div>
   );

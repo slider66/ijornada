@@ -7,11 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSystemConfig, updateSystemConfig } from "./actions";
 import { toast } from "sonner";
-import { Calendar } from "lucide-react";
+import { Calendar, Trash2, AlertTriangle } from "lucide-react";
+import { resetData } from "@/app/admin/exports/actions";
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+
+  // Reset Config
+  const [resetAll, setResetAll] = useState(false);
+  const [resetFrom, setResetFrom] = useState("");
+  const [resetTo, setResetTo] = useState("");
 
   useEffect(() => {
     loadConfig();
@@ -30,6 +36,40 @@ export default function SettingsPage() {
       setConfig((prev) => ({ ...prev, [key]: value }));
     } else {
       toast.error("Error al guardar");
+    }
+  };
+
+  const handleReset = async () => {
+    let message = "¿Estás seguro?\n";
+    if (resetAll) {
+      message += "ESTO BORRARÁ TODO EL HISTORIAL DE FICHAJES E INCIDENCIAS.\n";
+    } else {
+      if (!resetFrom || !resetTo) {
+        toast.error("Selecciona un rango de fechas o marca 'Borrar Todo'");
+        return;
+      }
+      message += `Se borrarán los datos desde ${resetFrom} hasta ${resetTo}.\n`;
+    }
+    message += "Esta acción no se puede deshacer.";
+
+    if (confirm(message)) {
+      setLoading(true);
+      const from = resetAll ? undefined : new Date(resetFrom);
+      const to = resetAll ? undefined : new Date(resetTo);
+      // Adjust to include the full end day
+      if (to) to.setHours(23, 59, 59, 999);
+
+      const result = await resetData(from, to);
+      if (result.success) {
+        toast.success("Datos eliminados correctamente");
+        if (resetAll) {
+          setResetFrom("");
+          setResetTo("");
+        }
+      } else {
+        toast.error("Error al reiniciar datos");
+      }
+      setLoading(false);
     }
   };
 
@@ -79,6 +119,65 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">
                 Si se define, esta fecha tiene prioridad sobre la fecha piloto. Los datos anteriores serán ignorados.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="max-w-xl">
+        <Card className="border-red-200 bg-red-50/50">
+          <CardHeader>
+            <CardTitle className="text-red-800 flex items-center gap-2 text-lg">
+              <AlertTriangle className="h-5 w-5" /> Zona de Peligro
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-red-600">
+                Selecciona el rango de fechas que deseas limpiar (por ejemplo pruebas antiguas).
+              </p>
+
+              <div className="grid gap-2 p-3 border border-red-100 rounded bg-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="reset-all"
+                    checked={resetAll}
+                    onChange={(e) => setResetAll(e.target.checked)}
+                    className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                  />
+                  <Label htmlFor="reset-all" className="cursor-pointer font-medium text-red-900">Borrar TODO el historial (Peligro)</Label>
+                </div>
+
+                {!resetAll && (
+                  <div className="grid sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="reset-from" className="text-xs">Desde</Label>
+                      <Input
+                        id="reset-from"
+                        type="date"
+                        value={resetFrom}
+                        onChange={(e) => setResetFrom(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="reset-to" className="text-xs">Hasta</Label>
+                      <Input
+                        id="reset-to"
+                        type="date"
+                        value={resetTo}
+                        onChange={(e) => setResetTo(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button variant="destructive" onClick={handleReset} disabled={loading}>
+                  <Trash2 className="mr-2 h-4 w-4" /> {resetAll ? "Borrar Todo" : "Borrar Rango"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -93,13 +93,13 @@ export default function HolidaysPage() {
       for (let i = startIndex; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        
+
         const parts = line.split(",");
         if (parts.length >= 2) {
           const dateStr = parts[0].trim();
           const name = parts[1].trim();
           const date = new Date(dateStr);
-          
+
           if (!isNaN(date.getTime()) && name) {
             parsed.push({ date, name });
           }
@@ -145,30 +145,33 @@ export default function HolidaysPage() {
             <CardContent className="flex flex-col items-center space-y-4">
               <Calendar
                 mode="single"
+                locale={es}
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 className="rounded-md border shadow"
                 modifiers={{
                   holiday: holidays.map((h) => new Date(h.date)),
+                  weekend: (date) => date.getDay() === 0 || date.getDay() === 6,
                 }}
-                modifiersStyles={{
-                  holiday: { color: "red", fontWeight: "bold", textDecoration: "underline" }
+                modifiersClassNames={{
+                  holiday: "text-red-600 font-bold bg-red-100 hover:bg-red-200",
+                  weekend: "bg-slate-100 text-slate-500",
                 }}
               />
-              
+
               <div className="w-full space-y-4 border-t pt-4">
                 {selectedDate && (
                   <>
                     <div className="text-sm font-medium text-center">
                       {format(selectedDate, "EEEE d 'de' MMMM, yyyy", { locale: es })}
                     </div>
-                    
+
                     {selectedHoliday ? (
                       <div className="bg-red-50 p-3 rounded border border-red-200 text-center">
                         <p className="text-red-800 font-bold mb-2">{selectedHoliday.name}</p>
-                        <Button 
-                          variant="destructive" 
-                          size="sm" 
+                        <Button
+                          variant="destructive"
+                          size="sm"
                           onClick={() => handleDelete(selectedHoliday.id)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" /> Eliminar Festivo
@@ -209,7 +212,7 @@ export default function HolidaysPage() {
                   <Download className="mr-2 h-4 w-4" /> Descargar Plantilla
                 </Button>
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="csv">Subir CSV</Label>
                 <Input
@@ -233,9 +236,9 @@ export default function HolidaysPage() {
                 </div>
               )}
 
-              <Button 
-                onClick={handleImport} 
-                className="w-full" 
+              <Button
+                onClick={handleImport}
+                className="w-full"
                 disabled={previewHolidays.length === 0}
               >
                 <Upload className="mr-2 h-4 w-4" /> Importar {previewHolidays.length > 0 ? `(${previewHolidays.length})` : ""}
@@ -259,10 +262,10 @@ export default function HolidaysPage() {
                 <div className="text-lg font-semibold capitalize text-center border-b pb-2">
                   {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }) : "Mes Actual"}
                 </div>
-                
+
                 {(() => {
-                  const currentMonthHolidays = holidays.filter(h => 
-                    selectedDate && 
+                  const currentMonthHolidays = holidays.filter(h =>
+                    selectedDate &&
                     new Date(h.date).getMonth() === selectedDate.getMonth() &&
                     new Date(h.date).getFullYear() === selectedDate.getFullYear()
                   );
