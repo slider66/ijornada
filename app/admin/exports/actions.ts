@@ -57,7 +57,7 @@ export async function getDashboardStats(
     const config = await prisma.systemConfig.findMany({
         where: { key: { in: ["PILOT_START_DATE", "PRODUCTION_START_DATE"] } }
     });
-    
+
     const configMap = config.reduce((acc, curr) => {
         acc[curr.key] = curr.value;
         return acc;
@@ -65,12 +65,13 @@ export async function getDashboardStats(
 
     const pilotStart = configMap["PILOT_START_DATE"];
     const prodStart = configMap["PRODUCTION_START_DATE"];
-    
+
     // Determine effective start date
     let effectiveStartDate = startDate;
-    
+    let prodDate: Date | null = null;
+
     if (prodStart) {
-        const prodDate = startOfDay(new Date(prodStart));
+        prodDate = startOfDay(new Date(prodStart));
         if (prodDate > effectiveStartDate) effectiveStartDate = prodDate;
     } else if (pilotStart) {
         const pilotDate = startOfDay(new Date(pilotStart));
@@ -173,8 +174,10 @@ export async function getDashboardStats(
 
             // 3. Calculate Expected Minutes
             let expectedMinutes = 0;
-            // Only expect hours if no incident and no holiday
-            if (!activeIncident && !isHoliday) {
+            const isPilotDay = !prodDate || day < prodDate;
+
+            // Only expect hours if no incident and no holiday and NOT pilot day
+            if (!isPilotDay && !activeIncident && !isHoliday) {
                 const schedule = user.schedules.find((s) => s.dayOfWeek === dayOfWeek);
                 if (schedule) {
                     for (const slot of schedule.slots) {
@@ -207,7 +210,7 @@ export async function getDashboardStats(
             // Update User Totals
             userStat.workedMinutes += workedMinutes;
             userStat.expectedMinutes += expectedMinutes;
-            
+
             // Only add to "Expected To Date" if the day is in the past or today
             if (day <= endOfDay(now)) {
                 userStat.expectedToDateMinutes += expectedMinutes;

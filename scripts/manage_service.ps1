@@ -42,6 +42,7 @@ function Show-Menu {
     Write-Host "4. Iniciar Servidor Manualmente (Prueba)"
     Write-Host "5. ACTIVAR Modo Kiosco (Abrir navegador al inicio)"
     Write-Host "6. DESACTIVAR Modo Kiosco"
+    Write-Host "7. ACTUALIZAR Repositorio (Git Pull + Build)"
     Write-Host "Q. Salir"
     Write-Host ""
 }
@@ -143,6 +144,18 @@ function Start-Manual {
     Pause
 }
 
+function Run-Update {
+    $UpdateScript = "$ScriptDir\update_client.ps1"
+    if (Test-Path $UpdateScript) {
+        & $UpdateScript
+    }
+    else {
+        Write-Error "No se encontró el script de actualización en: $UpdateScript"
+        Pause
+    }
+}
+
+
 # Main Loop
 Assert-Admin
 Assert-Node
@@ -156,6 +169,7 @@ do {
         '4' { Start-Manual }
         '5' { Enable-AutoBrowser }
         '6' { Disable-AutoBrowser }
+        '7' { Run-Update }
         'Q' { exit }
         'q' { exit }
         Default { Write-Warning "Opcion no valida" }
