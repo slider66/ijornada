@@ -8,8 +8,12 @@ iJornada es una aplicación moderna y escalable para el control de asistencia y 
 
 - **Gestión de Usuarios**: Alta, baja y modificación de empleados.
 - **Horarios y Turnos**: Configuración de horarios laborales y turnos rotativos.
-- **Incidencias**: Registro y seguimiento de ausencias, vacaciones y bajas médicas.
-- **Reportes**: Visualización de registros de fichaje y auditoría.
+- **Incidencias**: Registro y seguimiento de ausencias, vacaciones y bajas médicas (incluyendo accidentes laborales).
+- **Reportes Avanzados**: 
+  - Panel de control con KPIs (Horas trabajadas, esperadas, balance y cumplimiento).
+  - Exportación de datos en CSV (Detallado y Resumido).
+  - Generación de PDF con firma para cumplimiento legal.
+  - Envío de reportes por Email.
 
 ### 🤖 Modo Kiosco (`/kiosk`)
 
@@ -29,6 +33,7 @@ El proyecto está construido con un stack tecnológico moderno y robusto:
 - **Componentes UI**: [shadcn/ui](https://ui.shadcn.com/)
 - **Autenticación**: [Auth.js (NextAuth)](https://authjs.dev/)
 - **Animaciones**: [Framer Motion](https://www.framer.com/motion/)
+- **PDF**: [jsPDF](https://github.com/parallax/jsPDF) & [autoTable](https://github.com/simonbengtsson/jsPDF-AutoTable)
 
 ## ⚙️ Instalación y Configuración
 
