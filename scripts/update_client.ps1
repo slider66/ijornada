@@ -49,6 +49,21 @@ function Build-App {
     Set-Location $ProjectDir
 
     # Install deps
+    Write-Host "Verificando pnpm..."
+    try {
+        cmd /c pnpm --version | Out-Null
+    }
+    catch {
+        Write-Warning "pnpm no encontrado. Intentando instalar vía npm..."
+        try {
+            cmd /c npm install -g pnpm
+        }
+        catch {
+            Write-Error "No se pudo instalar pnpm. Asegúrese de que Node.js y npm están instalados."
+            exit
+        }
+    }
+
     Write-Host "Ejecutando pnpm install..."
     # We use cmd /c because pnpm is a batch file wrapper on windows usually
     cmd /c pnpm install --frozen-lockfile
