@@ -43,6 +43,7 @@ function Show-Menu {
     Write-Host "5. ACTIVAR Modo Kiosco (Abrir navegador al inicio)"
     Write-Host "6. DESACTIVAR Modo Kiosco"
     Write-Host "7. ACTUALIZAR Repositorio (Git Pull + Build)"
+    Write-Host "8. Parar Servicio"
     Write-Host "Q. Salir"
     Write-Host ""
 }
@@ -136,6 +137,18 @@ function Get-ServiceStatus {
     Pause
 }
 
+function Stop-ServiceTask {
+    Write-Host "Deteniendo servicio..." -ForegroundColor Yellow
+    try {
+        Stop-ScheduledTask -TaskName $TaskName -ErrorAction Stop
+        Write-Host "[EXITO] Servicio detenido." -ForegroundColor Green
+    }
+    catch {
+        Write-Warning "No se pudo detener el servicio. Puede que ya esté detenido o no exista."
+    }
+    Pause
+}
+
 function Start-Manual {
     Write-Host "Iniciando servidor manualmente..." -ForegroundColor Yellow
     Write-Host "Presione Ctrl+C para detener."
@@ -170,6 +183,7 @@ do {
         '5' { Enable-AutoBrowser }
         '6' { Disable-AutoBrowser }
         '7' { Run-Update }
+        '8' { Stop-ServiceTask }
         'Q' { exit }
         'q' { exit }
         Default { Write-Warning "Opcion no valida" }
