@@ -1,6 +1,7 @@
 # Script de Actualización para iJornada Client Terminal
 # Requiere permisos de Administrador para reiniciar el servicio
 
+$OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Stop"
 $TaskName = "iJornada Server"
 $ScriptDir = $PSScriptRoot
@@ -17,7 +18,7 @@ function Assert-Admin {
 }
 
 function Update-Repo {
-    Write-Host "Obteniendo última versión de GitHub..." -ForegroundColor Cyan
+    Write-Host "Obteniendo la última versión de GitHub..." -ForegroundColor Cyan
     Set-Location $ProjectDir
     
     # Check if git is installed
@@ -29,16 +30,18 @@ function Update-Repo {
         exit
     }
 
-    # Stash changes just in case local changes act up, though usually client shouldn't have changes
-    # git stash 
+    # Force reset to match remote state exactly (Discard local changes)
+    Write-Host "Sincronizando con el repositorio (Force Update)..."
+    git fetch origin
+    if ($LASTEXITCODE -ne 0) { Write-Error "Error al conectar con GitHub."; exit }
 
-    $pullResult = git pull
-    Write-Host $pullResult
+    git reset --hard origin/main
+    if ($LASTEXITCODE -ne 0) { Write-Error "Error al resetear repositorio."; exit }
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Error al hacer git pull."
-        exit
-    }
+    # Clean untracked files (careful, this deletes everything not in git)
+    # git clean -fd 
+    # We might skip clean -fd to avoid deleting .env or other local configs if they are not ignored properly
+    # For now, reset --hard is usually enough for modified files conflicts.
 }
 
 function Build-App {
