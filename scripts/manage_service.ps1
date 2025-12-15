@@ -36,14 +36,22 @@ function Show-Menu {
     Write-Host "   GESTION IJORNADA SERVER    " -ForegroundColor Cyan
     Write-Host "==============================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "1. Instalar Servicio (Tarea Programada Automatico)"
+    
+    Write-Host "--- SERVICIO WINDOWS ---" -ForegroundColor Yellow
+    Write-Host "1. Instalar Servicio (Auto Start)"
     Write-Host "2. Desinstalar Servicio"
-    Write-Host "3. Ver Estado del Servicio"
-    Write-Host "4. Iniciar Servidor Manualmente (Prueba)"
-    Write-Host "5. ACTIVAR Modo Kiosco (Abrir navegador al inicio)"
-    Write-Host "6. DESACTIVAR Modo Kiosco"
-    Write-Host "7. ACTUALIZAR Repositorio (Git Pull + Build)"
     Write-Host "8. Parar Servicio"
+    Write-Host "3. Ver Estado del Servicio"
+    
+    Write-Host "`n--- MODO KIOSCO (NAVEGADOR) ---" -ForegroundColor Yellow
+    Write-Host "5. ACTIVAR Modo Kiosco - Activa la ejecucion automática cuando arranca Windows"
+    Write-Host "6. DESACTIVAR Modo Kiosco - Desactiva la ejecucion automática cuando arranca Windows"
+    
+    Write-Host "`n--- MANTENIMIENTO Y PRUEBAS ---" -ForegroundColor Yellow
+    Write-Host "7. ACTUALIZAR Repositorio (Git Pull + Build)"
+    Write-Host "4. Iniciar Servidor Manualmente"
+
+    Write-Host "`n--------------------------------" -ForegroundColor DarkGray
     Write-Host "Q. Salir"
     Write-Host ""
 }
@@ -57,8 +65,8 @@ function Enable-AutoBrowser {
 @echo off
 :: Esperar a que el servicio arranque
 timeout /t 10 /nobreak
-:: Abrir navegador en modo Kiosco (o pestana normal)
-start http://localhost:3000
+:: Abrir navegador en modo Kiosco (Edge)
+start msedge --kiosk "http://localhost:3000" --edge-kiosk-type=fullscreen
 "@
     
     try {
