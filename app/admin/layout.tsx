@@ -1,4 +1,5 @@
 import { AdminSidebar } from "./components/AdminSidebar"
+import { AdminInactivityHandler } from "./components/AdminInactivityHandler"
 
 export default function AdminLayout({
   children,
@@ -7,6 +8,7 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex min-h-screen">
+      <AdminInactivityHandler />
       {/* Sidebar */}
       <AdminSidebar />
 
