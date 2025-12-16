@@ -144,6 +144,8 @@ export default function WorkersPage() {
                 <div className="space-y-2">
                   <Label>PIN (Opcional)</Label>
                   <Input
+                    type="password"
+                    autoComplete="new-password"
                     value={formData.pin}
                     onChange={e => setFormData({ ...formData, pin: e.target.value })}
                   />
