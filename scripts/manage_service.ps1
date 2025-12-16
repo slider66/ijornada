@@ -40,8 +40,8 @@ function Show-Menu {
     Write-Host "--- SERVICIO WINDOWS ---" -ForegroundColor Yellow
     Write-Host "1. Instalar Servicio (Auto Start)"
     Write-Host "2. Desinstalar Servicio"
-    Write-Host "8. Parar Servicio"
-    Write-Host "3. Ver Estado del Servicio"
+    Write-Host "3. Parar Servicio"
+    Write-Host "4. Ver Estado del Servicio"
     
     Write-Host "`n--- MODO KIOSCO (NAVEGADOR) ---" -ForegroundColor Yellow
     Write-Host "5. ACTIVAR Modo Kiosco - Activa la ejecucion automática cuando arranca Windows"
@@ -49,7 +49,7 @@ function Show-Menu {
     
     Write-Host "`n--- MANTENIMIENTO Y PRUEBAS ---" -ForegroundColor Yellow
     Write-Host "7. ACTUALIZAR Repositorio (Git Pull + Build)"
-    Write-Host "4. Iniciar Servidor Manualmente"
+    Write-Host "8. Iniciar Servidor Manualmente"
 
     Write-Host "`n--------------------------------" -ForegroundColor DarkGray
     Write-Host "Q. Salir"

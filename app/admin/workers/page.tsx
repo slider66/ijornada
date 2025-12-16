@@ -32,6 +32,12 @@ export default function WorkersPage() {
   const [formData, setFormData] = useState({ name: "", email: "", nfcTagId: "", pin: "", qrToken: "" })
   const [qrUser, setQrUser] = useState<User | null>(null)
 
+  // PIN Dialog State
+  const [isPinDialogOpen, setIsPinDialogOpen] = useState(false)
+  const [newPin, setNewPin] = useState("")
+  const [confirmPin, setConfirmPin] = useState("")
+  const [pinError, setPinError] = useState("")
+
   useEffect(() => {
     fetchUsers()
   }, [])
@@ -57,6 +63,34 @@ export default function WorkersPage() {
     setIsCreating(false)
     setEditingUser(null)
     setFormData({ name: "", email: "", nfcTagId: "", pin: "", qrToken: "" })
+  }
+
+  const openPinDialog = () => {
+    setNewPin("")
+    setConfirmPin("")
+    setPinError("")
+    setIsPinDialogOpen(true)
+  }
+
+  const handlePinSubmit = () => {
+    if (newPin !== confirmPin) {
+      setPinError("Los PINs no coinciden")
+      return
+    }
+
+    if (!/^\d+$/.test(newPin)) {
+      setPinError("El PIN debe contener solo números")
+      return
+    }
+
+    if (newPin.length < 4) {
+      setPinError("El PIN debe tener al menos 4 dígitos")
+      return
+    }
+
+    setFormData(prev => ({ ...prev, pin: newPin }))
+    setIsPinDialogOpen(false)
+    toast.success("PIN actualizado en el formulario (Recuerda Guardar)")
   }
 
   const handleGenerateNewQR = () => {
@@ -143,12 +177,20 @@ export default function WorkersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>PIN (Opcional)</Label>
-                  <Input
-                    type="password"
-                    autoComplete="new-password"
-                    value={formData.pin}
-                    onChange={e => setFormData({ ...formData, pin: e.target.value })}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      value={formData.pin}
+                      readOnly
+                      disabled
+                      className="bg-muted"
+                      placeholder={formData.pin ? "••••" : "No asignado"}
+                    />
+                    <Button type="button" variant="outline" onClick={openPinDialog}>
+                      Cambiar PIN
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -284,6 +326,17 @@ export default function WorkersPage() {
         </DialogContent>
       </Dialog>
 
+      <PinDialog
+        open={isPinDialogOpen}
+        onOpenChange={setIsPinDialogOpen}
+        newPin={newPin}
+        setNewPin={setNewPin}
+        confirmPin={confirmPin}
+        setConfirmPin={setConfirmPin}
+        error={pinError}
+        onSubmit={handlePinSubmit}
+      />
+
       {/* Print Layout */}
       {qrUser && (
         <>
@@ -327,5 +380,54 @@ export default function WorkersPage() {
         </>
       )}
     </div>
+  )
+}
+
+function PinDialog({ open, onOpenChange, newPin, setNewPin, confirmPin, setConfirmPin, error, onSubmit }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  newPin: string;
+  setNewPin: (s: string) => void;
+  confirmPin: string;
+  setConfirmPin: (s: string) => void;
+  error: string;
+  onSubmit: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Cambiar PIN</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200">
+            ⚠️ El PIN debe componerse únicamente de números.
+          </div>
+          <div className="space-y-2">
+            <Label>Nuevo PIN</Label>
+            <Input
+              type="password"
+              value={newPin}
+              onChange={e => setNewPin(e.target.value)}
+              placeholder="Introduce nuevo PIN"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Confirmar PIN</Label>
+            <Input
+              type="password"
+              value={confirmPin}
+              onChange={e => setConfirmPin(e.target.value)}
+              placeholder="Confirma el PIN"
+            />
+          </div>
+          {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button onClick={onSubmit}>Confirmar</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
