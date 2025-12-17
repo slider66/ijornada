@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getDashboardStats as getStats, type DashboardStats } from "@/lib/stats";
+import { logAction } from "@/lib/audit";
 
 export type { DashboardStats };
 
@@ -26,6 +27,8 @@ export async function resetData(from?: Date, to?: Date) {
         // Delete clock-ins and incidents based on range or all
         await prisma.clockIn.deleteMany({ where: whereClause });
         await prisma.incident.deleteMany({ where: incidentWhere });
+
+        await logAction("DATA_RESET", `Data reset initiated from ${from || "start"} to ${to || "end"}`, "ADMIN");
 
         return { success: true };
     } catch (error) {

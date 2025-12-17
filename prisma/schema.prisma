@@ -35,6 +35,9 @@ model ClockIn {
   location  String?
   
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, timestamp])
+  @@index([timestamp])
 }
 
 model Incident {

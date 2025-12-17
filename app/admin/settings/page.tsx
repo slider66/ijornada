@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSystemConfig, updateSystemConfig } from "./actions";
+import { getSystemConfig, updateSystemConfig, upsertAdminUser } from "./actions";
 import { toast } from "sonner";
-import { Calendar, Trash2, AlertTriangle } from "lucide-react";
+import { Calendar, Trash2, AlertTriangle, Shield } from "lucide-react";
 import { resetData } from "@/app/admin/exports/actions";
 
 export default function SettingsPage() {
@@ -124,6 +124,20 @@ export default function SettingsPage() {
         </Card>
       </div>
 
+
+      <div className="max-w-xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" /> Administrador del Sistema
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <AdminUserForm />
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="max-w-xl">
         <Card className="border-red-200 bg-red-50/50">
           <CardHeader>
@@ -185,3 +199,50 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+function AdminUserForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name || !email || !password) {
+      toast.error("Rellena todos los campos");
+      return;
+    }
+
+    setLoading(true);
+    const res = await upsertAdminUser({ name, email, password });
+    setLoading(false);
+
+    if (res.success) {
+      toast.success("Administrador guardado correctamente");
+      setPassword(""); // Clear password for security
+    } else {
+      toast.error("Error al guardar administrador");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2">
+        <Label>Nombre</Label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Administrador General" />
+      </div>
+      <div className="grid gap-2">
+        <Label>Email (Para recuperación)</Label>
+        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@empresa.com" />
+        <p className="text-xs text-muted-foreground">Este email será necesario para recuperar la contraseña.</p>
+      </div>
+      <div className="grid gap-2">
+        <Label>Contraseña</Label>
+        <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="******" />
+      </div>
+      <Button onClick={handleSubmit} disabled={loading} className="w-full">
+        {loading ? "Guardando..." : "Crear / Actualizar Admin"}
+      </Button>
+    </div>
+  );
+}
+

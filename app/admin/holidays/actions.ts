@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/audit";
 
 export async function getHolidays() {
   return await prisma.holiday.findMany({
@@ -31,6 +32,7 @@ export async function deleteHoliday(id: string) {
     await prisma.holiday.delete({
       where: { id },
     });
+    await logAction("DELETE_HOLIDAY", `Holiday ${id} deleted`);
     revalidatePath("/admin/holidays");
     return { success: true };
   } catch (error) {

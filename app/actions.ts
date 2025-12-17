@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/audit";
+import { headers } from "next/headers";
 
 export type PinVerificationResult = {
     success: boolean;
@@ -15,6 +17,23 @@ export type PinVerificationResult = {
 };
 
 export async function verifyPin(pin: string): Promise<PinVerificationResult> {
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for") || "unknown";
+
+    // Rate Limiting Check
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    const recentFailures = await prisma.auditLog.count({
+        where: {
+            action: "PIN_FAIL",
+            timestamp: { gte: oneMinuteAgo },
+            details: { contains: `IP: ${ip}` }
+        }
+    });
+
+    if (recentFailures >= 5) {
+        return { success: false, message: "Demasiados intentos fallidos. Inténtalo más tarde.", sound: "error" };
+    }
+
     if (!pin || pin.length < 4 || !/^\d+$/.test(pin)) {
         return { success: false, message: "PIN inválido. Debe tener al menos 4 dígitos.", sound: "error" };
     }
@@ -34,6 +53,7 @@ export async function verifyPin(pin: string): Promise<PinVerificationResult> {
         });
 
         if (!user) {
+            await logAction("PIN_FAIL", `Failed PIN attempt from IP: ${ip}`, "SYSTEM");
             return { success: false, message: "PIN no encontrado.", sound: "error" };
         }
 
@@ -87,6 +107,9 @@ export async function verifyPin(pin: string): Promise<PinVerificationResult> {
                 timestamp: now,
             },
         });
+
+        // Audit Log
+        await logAction("CLOCK_IN_PIN", `User ${user.name} (${user.email || "No Email"}) clocked ${type} via PIN from IP: ${ip}`, user.id);
 
         revalidatePath("/admin");
 
@@ -173,6 +196,9 @@ export async function verifyQr(token: string): Promise<PinVerificationResult> {
                 timestamp: now,
             },
         });
+
+        // Audit Log
+        await logAction("CLOCK_IN_QR", `User ${user.name} (${user.email || "No Email"}) clocked ${type} via QR`, user.id);
 
         revalidatePath("/admin");
 

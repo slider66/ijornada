@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { generateEAN13 } from "@/lib/ean13"
+import { logAction } from "@/lib/audit"
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +30,7 @@ export async function GET() {
   const usersWithStatus = users.map((user) => {
     const lastClockIn = user.clockIns[0]
     const isWorking = lastClockIn && lastClockIn.type === "IN"
-    
+
     // Calculate vacation days
     const vacationDays = user.incidents
       .filter(i => i.type.toLowerCase().includes("vacaci"))
@@ -37,7 +38,7 @@ export async function GET() {
         const start = new Date(curr.startDate);
         const end = curr.endDate ? new Date(curr.endDate) : start;
         const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
         return acc + diffDays;
       }, 0);
 
@@ -46,7 +47,7 @@ export async function GET() {
       status: isWorking ? "working" : "offline",
       vacationDays,
       // Remove heavy incidents array from response if not needed
-      incidents: undefined 
+      incidents: undefined
     }
   })
 
@@ -71,6 +72,8 @@ export async function POST(req: Request) {
     const user = await prisma.user.create({
       data: userData,
     })
+
+    await logAction("CREATE_USER", `User ${user.email} (${user.name}) created`, "ADMIN");
 
     return NextResponse.json(user)
   } catch (error) {
@@ -101,6 +104,8 @@ export async function PUT(req: Request) {
       where: { id },
       data: userData,
     })
+
+    await logAction("UPDATE_USER", `User ${user.email} (${user.name}) updated`, "ADMIN");
 
     return NextResponse.json(user)
   } catch (error) {
