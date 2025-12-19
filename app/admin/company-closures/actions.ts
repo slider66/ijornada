@@ -41,7 +41,7 @@ export async function createCompanyClosure(data: CompanyClosureData) {
             data: {
                 action: "COMPANY_CLOSURE_CREATE",
                 details: `Created company closure: ${data.name} (${data.startDate.toISOString().split('T')[0]} - ${data.endDate.toISOString().split('T')[0]})`,
-                performedBy: "ADMIN"
+                userId: "ADMIN"
             }
         })
 
@@ -70,7 +70,7 @@ export async function updateCompanyClosure(id: string, data: CompanyClosureData)
             data: {
                 action: "COMPANY_CLOSURE_UPDATE",
                 details: `Updated company closure: ${data.name}`,
-                performedBy: "ADMIN"
+                userId: "ADMIN"
             }
         })
 
@@ -93,7 +93,7 @@ export async function deleteCompanyClosure(id: string) {
             data: {
                 action: "COMPANY_CLOSURE_DELETE",
                 details: `Deleted company closure: ${closure.name}`,
-                performedBy: "ADMIN"
+                userId: "ADMIN"
             }
         })
 

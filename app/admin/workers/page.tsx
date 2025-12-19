@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Plus, Pencil, X, QrCode, Download, Mail, Barcode as BarcodeIcon } from "lucide-react"
+import { Plus, Pencil, QrCode, Download, Mail, Barcode as BarcodeIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import dynamic from "next/dynamic"
@@ -38,14 +38,14 @@ export default function WorkersPage() {
   const [confirmPin, setConfirmPin] = useState("")
   const [pinError, setPinError] = useState("")
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
   const fetchUsers = async () => {
     const res = await fetch("/api/users")
     if (res.ok) setUsers(await res.json())
   }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
 
   const handleEdit = (user: User) => {
     setEditingUser(user)
@@ -121,7 +121,7 @@ export default function WorkersPage() {
         const error = await res.json()
         toast.error(error.error || "Error al guardar")
       }
-    } catch (error) {
+    } catch {
       toast.error("Error de conexión")
     }
   }
@@ -136,11 +136,53 @@ export default function WorkersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Gestión de Trabajadores</h1>
-        {!isCreating && (
+        <div className="flex gap-2">
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              id="import-file"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+
+                const reader = new FileReader()
+                reader.onload = async (e) => {
+                  try {
+                    const json = JSON.parse(e.target?.result as string)
+                    const res = await fetch("/api/workers/import", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(json),
+                    })
+                    const data = await res.json()
+                    if (res.ok) {
+                      toast.success(data.message)
+                      fetchUsers()
+                    } else {
+                      toast.error(data.error || "Error al importar")
+                    }
+                  } catch {
+                    toast.error("Error al procesar el archivo")
+                  }
+                }
+                reader.readAsText(file)
+                // Clear input
+                e.target.value = ""
+              }}
+            />
+            <Button variant="outline" onClick={() => document.getElementById("import-file")?.click()}>
+              Importar
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = "/api/workers/export"}>
+              Exportar
+            </Button>
+      {!isCreating && (
           <Button onClick={() => setIsCreating(true)}>
             <Plus className="mr-2 h-4 w-4" /> Nuevo Trabajador
           </Button>
         )}
+        </div>
       </div>
 
       {isCreating && (

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { getSystemConfig, updateSystemConfig, upsertAdminUser } from "./actions";
 import { getCompanyInfo, updateCompanyInfo, type CompanyInfoData } from "./company-actions";
 import { toast } from "sonner";
-import { Calendar, Trash2, AlertTriangle, Shield, Building2, X } from "lucide-react";
+import { Calendar, Trash2, AlertTriangle, Shield, Building2, X, Download } from "lucide-react";
 import { resetData } from "@/app/admin/exports/actions";
 import Image from "next/image";
 
@@ -21,15 +21,15 @@ export default function SettingsPage() {
   const [resetFrom, setResetFrom] = useState("");
   const [resetTo, setResetTo] = useState("");
 
-  useEffect(() => {
-    loadConfig();
-  }, []);
-
   const loadConfig = async () => {
     const data = await getSystemConfig();
     setConfig(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    loadConfig();
+  }, []);
 
   const handleSave = async (key: string, value: string) => {
     const result = await updateSystemConfig(key, value);
@@ -136,6 +136,24 @@ export default function SettingsPage() {
           <CompanyInfoForm />
         </CardContent>
       </Card>
+
+      <div className="max-w-xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" /> Copia de Seguridad
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Descarga una copia completa de la base de datos en formato JSON para guardar en local.
+            </p>
+            <Button variant="outline" onClick={() => window.location.href = "/api/admin/backup"}>
+              <Download className="mr-2 h-4 w-4" /> Descargar Backup Local
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="max-w-xl">
         <Card>
@@ -308,7 +326,7 @@ function CompanyInfoForm() {
       } else {
         toast.error(result.error || "Error al subir logo");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error al subir logo");
     } finally {
       setUploading(false);
