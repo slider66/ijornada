@@ -5,7 +5,7 @@ import { startOfDay, endOfDay, subDays, eachDayOfInterval, isSameDay, format } f
 import { revalidatePath } from "next/cache";
 
 export async function checkAndGenerateAbsences() {
-    console.log("Checking for absences...");
+
 
     // 1. Determine Start Date (Pilot Start or 30 days ago)
     const config = await prisma.systemConfig.findUnique({ where: { key: "PILOT_START_DATE" } });

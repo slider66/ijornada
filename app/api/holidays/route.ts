@@ -29,7 +29,7 @@ export async function GET() {
 
     // If no holidays found for current year, fetch from API and seed
     if (holidays.length === 0) {
-      console.log(`Seeding holidays for ${currentYear} from OpenHolidays API...`);
+
       
       const response = await fetch(
         `https://openholidaysapi.org/PublicHolidays?countryIsoCode=ES&languageIsoCode=ES&validFrom=${currentYear}-01-01&validTo=${currentYear}-12-31&subdivisionCode=ES-MD`
