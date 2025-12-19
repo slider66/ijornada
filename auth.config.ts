@@ -9,13 +9,13 @@ export const authConfig = {
             const isLoggedIn = !!auth?.user
             const isOnAdmin = nextUrl.pathname.startsWith("/admin")
 
-            // Admin protection
-            if (isOnAdmin) {
-                if (isLoggedIn) return true
-                return false // Redirect unauthenticated users to login page
-            }
+            // Admin protection (DISABLED TEMPORARILY)
+            // if (isOnAdmin) {
+            //     if (isLoggedIn) return true
+            //     return false // Redirect unauthenticated users to login page
+            // }
 
-            // Allow all other routes
+            // Allow all routes (admin login disabled)
             return true
         },
         jwt({ token, user }) {

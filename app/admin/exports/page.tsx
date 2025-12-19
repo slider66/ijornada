@@ -19,12 +19,19 @@ export default function ExportsPage() {
   const [period, setPeriod] = useState("month");
   const [userId, setUserId] = useState("all");
   const [users, setUsers] = useState<{ id: string; name: string; email?: string }[]>([]);
+  const [companyInfo, setCompanyInfo] = useState<{ name: string; cif?: string; address?: string; city?: string; phone?: string; email?: string; logoPath?: string } | null>(null);
 
   useEffect(() => {
     // Fetch users for filter
     fetch("/api/users")
       .then((res) => res.json())
       .then((data) => setUsers(data));
+
+    // Fetch company info
+    fetch("/api/company-info")
+      .then((res) => res.json())
+      .then((data) => setCompanyInfo(data))
+      .catch(() => setCompanyInfo(null));
   }, []);
 
   useEffect(() => {
@@ -91,11 +98,56 @@ export default function ExportsPage() {
     stats.userStats.forEach((user, index) => {
       if (index > 0) doc.addPage();
 
+      let yPosition = 20;
+
+      // Add company logo if available
+      if (companyInfo?.logoPath) {
+        try {
+          doc.addImage(companyInfo.logoPath, 'PNG', 14, yPosition, 30, 30);
+          yPosition += 35;
+        } catch (e) {
+          // If logo fails to load, just continue without it
+          console.error("Failed to add logo to PDF:", e);
+        }
+      }
+
+      // Company info header
+      if (companyInfo?.name) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(companyInfo.name, 14, yPosition);
+        yPosition += 6;
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        if (companyInfo.cif) {
+          doc.text(`CIF: ${companyInfo.cif}`, 14, yPosition);
+          yPosition += 5;
+        }
+        if (companyInfo.address) {
+          doc.text(companyInfo.address, 14, yPosition);
+          yPosition += 5;
+        }
+        if (companyInfo.city || companyInfo.phone) {
+          const cityPhone = [companyInfo.city, companyInfo.phone].filter(Boolean).join(' | ');
+          doc.text(cityPhone, 14, yPosition);
+          yPosition += 5;
+        }
+        yPosition += 5;
+      }
+
+      // Document title
       doc.setFontSize(16);
-      doc.text(`Registro de Jornada: ${user.userName}`, 14, 20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Registro de Jornada: ${user.userName}`, 14, yPosition);
+      yPosition += 8;
+
       doc.setFontSize(10);
-      doc.text(`Periodo: ${periodStr}`, 14, 28);
-      doc.text(`Total Trabajado: ${formatDuration(user.workedMinutes)}`, 14, 34);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Periodo: ${periodStr}`, 14, yPosition);
+      yPosition += 6;
+      doc.text(`Total Trabajado: ${formatDuration(user.workedMinutes)}`, 14, yPosition);
+      yPosition += 10;
 
       const rows = user.dailyBreakdown?.map(day => [
         day.date,
@@ -105,7 +157,7 @@ export default function ExportsPage() {
       ]) || [];
 
       autoTable(doc, {
-        startY: 40,
+        startY: yPosition,
         head: [['Fecha', 'Día', 'Entrada / Salida', 'Total']],
         body: rows,
       });

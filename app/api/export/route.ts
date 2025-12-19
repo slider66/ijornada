@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getDashboardStats } from "@/lib/stats"
+import { getCompanyInfo } from "@/app/admin/settings/company-actions"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -20,8 +21,21 @@ export async function GET(req: Request) {
   const to = new Date(toStr)
 
   const stats = await getDashboardStats(from, to, userId)
+  const companyInfo = await getCompanyInfo()
   const bom = "\uFEFF";
   let csvContent = bom;
+
+  // Add company header if available
+  if (companyInfo?.name) {
+    csvContent += `${companyInfo.name}\n`;
+    if (companyInfo.cif) csvContent += `CIF: ${companyInfo.cif}\n`;
+    if (companyInfo.address) csvContent += `${companyInfo.address}\n`;
+    if (companyInfo.city || companyInfo.phone) {
+      const cityPhone = [companyInfo.city, companyInfo.phone].filter(Boolean).join(' | ');
+      csvContent += `${cityPhone}\n`;
+    }
+    csvContent += `\n`;
+  }
 
   if (type === "kpi") {
     // KPI Export
@@ -55,6 +69,16 @@ export async function GET(req: Request) {
 
     // Add Signature Footer
     csvContent += "\n\n\nFirma del Trabajador: ____________________________________\n"
+
+    // Add company footer if available
+    if (companyInfo?.name) {
+      csvContent += `\n${companyInfo.name}`;
+      if (companyInfo.phone || companyInfo.email) {
+        const contact = [companyInfo.phone, companyInfo.email].filter(Boolean).join(' | ');
+        csvContent += ` - ${contact}`;
+      }
+      csvContent += `\n`;
+    }
   }
 
   const filename = `export-${type}-${format(new Date(), "yyyy-MM-dd")}.csv`
