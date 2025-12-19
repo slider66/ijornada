@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/audit";
 import { headers } from "next/headers";
+import { getClosureForDate } from "@/app/admin/company-closures/actions";
 
 export type PinVerificationResult = {
     success: boolean;
@@ -39,6 +40,18 @@ export async function verifyPin(pin: string): Promise<PinVerificationResult> {
     }
 
     try {
+        // Check if today is a company closure day
+        const today = new Date();
+        const closure = await getClosureForDate(today);
+
+        if (closure) {
+            return {
+                success: false,
+                message: `La empresa está cerrada: ${closure.name} (${formatDate(closure.startDate)} - ${formatDate(closure.endDate)})`,
+                sound: "error"
+            };
+        }
+
         const user = await prisma.user.findUnique({
             where: { pin },
             include: {
@@ -132,6 +145,18 @@ export async function verifyQr(token: string): Promise<PinVerificationResult> {
     }
 
     try {
+        // Check if today is a company closure day
+        const today = new Date();
+        const closure = await getClosureForDate(today);
+
+        if (closure) {
+            return {
+                success: false,
+                message: `La empresa está cerrada: ${closure.name} (${formatDate(closure.startDate)} - ${formatDate(closure.endDate)})`,
+                sound: "error"
+            };
+        }
+
         const user = await prisma.user.findUnique({
             where: { qrToken: token },
             include: {
@@ -213,4 +238,12 @@ export async function verifyQr(token: string): Promise<PinVerificationResult> {
         console.error("Error verifying QR:", error);
         return { success: false, message: "Error del sistema. Inténtalo de nuevo.", sound: "error" };
     }
+}
+
+// Helper function to format dates
+function formatDate(date: Date): string {
+    return new Date(date).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short'
+    });
 }

@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { startOfDay, endOfDay, eachDayOfInterval, isSameDay, differenceInMinutes, format } from "date-fns";
 import { es } from "date-fns/locale";
+import { getClosureDaysInRange } from "@/app/admin/company-closures/actions";
 
 export type DashboardStats = {
     totalUsers: number;
@@ -40,7 +41,7 @@ export type DailyStat = {
     workedMinutes: number;
     expectedMinutes: number;
     balanceMinutes: number;
-    status: "ok" | "missing" | "extra" | "incident" | "holiday" | "off";
+    status: "ok" | "missing" | "extra" | "incident" | "holiday" | "off" | "closure";
     incidentType?: string;
     intervals: { start: string, end: string }[];
 };
@@ -138,6 +139,9 @@ export async function getDashboardStats(
         },
     });
 
+    // Fetch company closures
+    const closureDays = await getClosureDaysInRange(effectiveStartDate, endDate);
+
     const stats: DashboardStats = {
         totalUsers: users.length,
         totalWorkedMinutes: 0,
@@ -184,12 +188,15 @@ export async function getDashboardStats(
             // 2. Check Holidays
             const isHoliday = holidays.some((h) => isSameDay(h.date, day));
 
+            // 2.5. Check Company Closures
+            const isClosure = closureDays.some((c) => isSameDay(c, day));
+
             // 3. Calculate Expected Minutes
             let expectedMinutes = 0;
             const isPilotDay = !prodDate || day < prodDate;
 
-            // Only expect hours if no incident and no holiday (calculate even in pilot)
-            if (!activeIncident && !isHoliday) {
+            // Only expect hours if no incident, no holiday, and no closure
+            if (!activeIncident && !isHoliday && !isClosure) {
                 const schedule = user.schedules.find((s) => s.dayOfWeek === dayOfWeek);
                 if (schedule) {
                     for (const slot of schedule.slots) {
@@ -198,8 +205,8 @@ export async function getDashboardStats(
                         expectedMinutes += (endH * 60 + endM) - (startH * 60 + startM);
                     }
                 }
-            } else if (isHoliday) {
-                // Explicitly 0 for holidays (already handled by default 0, but good for clarity)
+            } else if (isHoliday || isClosure) {
+                // Explicitly 0 for holidays and closures
                 expectedMinutes = 0;
             }
 
@@ -246,6 +253,7 @@ export async function getDashboardStats(
             // Daily Breakdown
             let status: DailyStat["status"] = "ok";
             if (activeIncident) status = "incident";
+            else if (isClosure) status = "closure";
             else if (isHoliday) status = "holiday";
             else if (expectedMinutes === 0 && workedMinutes === 0) status = "off";
             else if (workedMinutes < expectedMinutes) status = "missing";

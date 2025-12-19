@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, AlertCircle, Calendar, FileText, Home } from "lucide-react";
+import { Users, AlertCircle, Calendar, FileText, Home, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
     { href: "/admin/workers", label: "Trabajadores", icon: Users },
     { href: "/admin/incidents", label: "Bajas y Faltas", icon: AlertCircle },
     { href: "/admin/schedules", label: "Horarios", icon: Calendar },
+    { href: "/admin/company-closures", label: "Cierres Empresa", icon: Building },
     { href: "/admin/exports", label: "Informes", icon: FileText },
     { href: "/admin/holidays", label: "Festivos", icon: Calendar },
     { href: "/admin/settings", label: "Configuración", icon: Users },
