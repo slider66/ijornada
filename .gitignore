@@ -42,6 +42,9 @@ yarn-error.log*
 /prisma/*.db
 /prisma/*.db-journal
 
+# backups (contain sensitive data)
+/backups/
+
 # system
 .DS_Store
 Thumbs.db
