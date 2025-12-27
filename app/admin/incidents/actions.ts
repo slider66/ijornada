@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { startOfDay, endOfDay, subDays, eachDayOfInterval, isSameDay, format } from "date-fns";
+import { startOfDay, endOfDay, subDays, eachDayOfInterval, isSameDay } from "date-fns";
 import { revalidatePath } from "next/cache";
 
 export async function checkAndGenerateAbsences() {
@@ -27,6 +27,15 @@ export async function checkAndGenerateAbsences() {
 
     const holidays = await prisma.holiday.findMany({
         where: { date: { gte: startDate, lte: endDate } }
+    });
+
+    // Fetch company closures in range
+    const closures = await prisma.companyClosure.findMany({
+        where: {
+            OR: [
+                { startDate: { lte: endDate }, endDate: { gte: startDate } }
+            ]
+        }
     });
 
     // Fetch all incidents in range to avoid duplicates
@@ -65,6 +74,11 @@ export async function checkAndGenerateAbsences() {
             const isHoliday = holidays.some(h => isSameDay(h.date, day));
             if (isHoliday) continue;
 
+            const isClosure = closures.some(c => 
+                c.startDate <= endOfDay(day) && c.endDate >= startOfDay(day)
+            );
+            if (isClosure) continue;
+
             // Check Schedule
             const dayOfWeek = day.getDay();
             const schedule = user.schedules.find(s => s.dayOfWeek === dayOfWeek);
@@ -76,7 +90,7 @@ export async function checkAndGenerateAbsences() {
             );
             if (hasClockIn) continue;
 
-            // If we are here: Scheduled Work Day, No Holiday, No Incident, No ClockIn -> FALTA
+            // If we are here: Scheduled Work Day, No Holiday, No Closure, No Incident, No ClockIn -> FALTA
             await prisma.incident.create({
                 data: {
                     userId: user.id,
