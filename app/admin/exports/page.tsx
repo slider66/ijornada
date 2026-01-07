@@ -89,21 +89,46 @@ export default function ExportsPage() {
     window.location.href = `/api/export?${params.toString()}`;
   };
 
-  const handlePDF = () => {
+  const handlePDF = async () => {
     if (!stats) return;
     const doc = new jsPDF();
     const { from, to } = getDateRange();
     const periodStr = `${format(from, "dd/MM/yyyy")} - ${format(to, "dd/MM/yyyy")}`;
 
-    stats.userStats.forEach((user, index) => {
-      if (index > 0) doc.addPage();
+    let isFirstPage = true;
+
+    for (const [index, user] of stats.userStats.entries()) {
+      if (!isFirstPage) doc.addPage();
+      isFirstPage = false;
 
       let yPosition = 20;
 
       // Add company logo if available
       if (companyInfo?.logoPath) {
         try {
-          doc.addImage(companyInfo.logoPath, 'PNG', 14, yPosition, 30, 30);
+          // Load image and convert to base64
+          const getBase64ImageFromURL = (url: string) => {
+            return new Promise((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "Anonymous";
+              img.src = url;
+              img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx?.drawImage(img, 0, 0);
+                const dataURL = canvas.toDataURL("image/png");
+                resolve(dataURL);
+              };
+              img.onerror = (error) => {
+                reject(error);
+              };
+            });
+          };
+
+          const logoData = await getBase64ImageFromURL(companyInfo.logoPath) as string;
+          doc.addImage(logoData, 'PNG', 14, yPosition, 30, 30);
           yPosition += 35;
         } catch (e) {
           // If logo fails to load, just continue without it
@@ -165,7 +190,7 @@ export default function ExportsPage() {
       const finalY = (doc as any).lastAutoTable.finalY + 40;
       doc.text("Firma del Trabajador:", 14, finalY);
       doc.line(50, finalY, 150, finalY); // Signature line
-    });
+    }
 
     doc.save(`reporte-jornada-${userId}.pdf`);
   };

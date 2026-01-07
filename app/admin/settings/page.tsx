@@ -429,12 +429,11 @@ function CompanyInfoForm() {
         <div className="flex items-start gap-4">
           {logoPreview && (
             <div className="relative">
-              <Image
+              <img
                 src={logoPreview}
                 alt="Logo de empresa"
-                width={100}
-                height={100}
-                className="border rounded object-contain"
+                style={{ width: '100px', height: '100px', objectFit: 'contain' }}
+                className="border rounded bg-white"
               />
               <button
                 type="button"
