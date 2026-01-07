@@ -101,9 +101,11 @@ export default function ExportsPage() {
       if (!isFirstPage) doc.addPage();
       isFirstPage = false;
 
-      let yPosition = 20;
+      let yPosition = 15;
+      const startY = yPosition;
+      let textY = yPosition;
 
-      // Add company logo if available
+      // Add company logo if available (Left side)
       if (companyInfo?.logoPath) {
         try {
           // Load image and convert to base64
@@ -128,51 +130,54 @@ export default function ExportsPage() {
           };
 
           const logoData = await getBase64ImageFromURL(companyInfo.logoPath) as string;
-          doc.addImage(logoData, 'PNG', 14, yPosition, 30, 30);
-          yPosition += 35;
+          doc.addImage(logoData, 'PNG', 14, startY, 25, 25);
         } catch (e) {
           // If logo fails to load, just continue without it
           console.error("Failed to add logo to PDF:", e);
         }
       }
 
-      // Company info header
+      // Company info header (Right side)
       if (companyInfo?.name) {
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text(companyInfo.name, 14, yPosition);
-        yPosition += 6;
+        doc.text(companyInfo.name, 196, textY, { align: 'right' });
+        textY += 5;
 
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         if (companyInfo.cif) {
-          doc.text(`CIF: ${companyInfo.cif}`, 14, yPosition);
-          yPosition += 5;
+          doc.text(`CIF: ${companyInfo.cif}`, 196, textY, { align: 'right' });
+          textY += 4;
         }
         if (companyInfo.address) {
-          doc.text(companyInfo.address, 14, yPosition);
-          yPosition += 5;
+          doc.text(companyInfo.address, 196, textY, { align: 'right' });
+          textY += 4;
         }
         if (companyInfo.city || companyInfo.phone) {
           const cityPhone = [companyInfo.city, companyInfo.phone].filter(Boolean).join(' | ');
-          doc.text(cityPhone, 14, yPosition);
-          yPosition += 5;
+          doc.text(cityPhone, 196, textY, { align: 'right' });
+          textY += 4;
         }
-        yPosition += 5;
       }
 
+      // Determine Y position for next section (max of logo height or text height)
+      // Logo is 25px high starting at startY(15) -> ends at 40
+      // Text starts at 15, max ~4 lines (4*5=20) -> ends at ~35
+      // We set a minimum start for body slightly below
+      yPosition = Math.max(textY, startY + 25) + 10;
+
       // Document title
-      doc.setFontSize(16);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text(`Registro de Jornada: ${user.userName}`, 14, yPosition);
-      yPosition += 8;
 
-      doc.setFontSize(10);
+      // Period aligned to right of title
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Periodo: ${periodStr}`, 14, yPosition);
-      yPosition += 6;
-      doc.text(`Total Trabajado: ${formatDuration(user.workedMinutes)}`, 14, yPosition);
-      yPosition += 10;
+      doc.text(`Periodo: ${periodStr}  |  Total: ${formatDuration(user.workedMinutes)}`, 196, yPosition, { align: "right" });
+
+      yPosition += 8;
 
       const rows = user.dailyBreakdown?.map(day => [
         day.date,
