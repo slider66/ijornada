@@ -30,18 +30,15 @@ function Update-Repo {
         exit
     }
 
+
     # Force reset to match remote state exactly (Discard local changes)
-    Write-Host "Sincronizando con el repositorio (Force Update)..."
-    git fetch origin
-    if ($LASTEXITCODE -ne 0) { Write-Error "Error al conectar con GitHub."; exit }
-
-    git reset --hard origin/main
-    if ($LASTEXITCODE -ne 0) { Write-Error "Error al resetear repositorio."; exit }
-
-    # Clean untracked files (careful, this deletes everything not in git)
-    # git clean -fd 
-    # We might skip clean -fd to avoid deleting .env or other local configs if they are not ignored properly
-    # For now, reset --hard is usually enough for modified files conflicts.
+    # MODIFICADO: Se cambia hard reset por git pull simple para preservar arreglos locales
+    Write-Host "Sincronizando con el repositorio..."
+    # git reset --hard origin/main <--- ESTO BORRABA LOS ARREGLOS LOCALES
+    git pull origin main
+    if ($LASTEXITCODE -ne 0) { 
+        Write-Warning "Hubo un conflicto o error al actualizar. Usando versión local existente." 
+    }
 }
 
 function Build-App {
@@ -62,7 +59,7 @@ function Build-App {
                 $npmGlobalPath = "$env:APPDATA\npm"
                 if (Test-Path $npmGlobalPath) {
                     if ($env:Path -notlike "*$npmGlobalPath*") {
-                        Write-Host "Agregando $npmGlobalPath al PATH de la sesión actual..." -ForegroundColor Scan
+                        Write-Host "Agregando $npmGlobalPath al PATH de la sesión actual..." -ForegroundColor Cyan
                         $env:Path += ";$npmGlobalPath"
                     }
                 }

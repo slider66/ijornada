@@ -94,9 +94,50 @@ function Disable-AutoBrowser {
     Pause
 }
 
+function Get-PnpmPath {
+    $pnpmPossiblePaths = @(
+        "$env:APPDATA\npm\pnpm.cmd",
+        "$env:ProgramFiles\nodejs\pnpm.cmd",
+        (Get-Command "pnpm" -ErrorAction SilentlyContinue).Source
+    )
+
+    foreach ($path in $pnpmPossiblePaths) {
+        if ($path -and (Test-Path $path)) {
+            return $path
+        }
+    }
+    return $null
+}
+
 function Install-Service {
     Write-Host "Instalando servicio..." -ForegroundColor Yellow
     
+    # Ensure start_server.bat uses absolute pnpm path
+    $pnpmPath = Get-PnpmPath
+    if ($pnpmPath) {
+        Write-Host "Configurando servicio con pnpm en: $pnpmPath"
+        # Rewrite the batch file with the correct path to ensure it works
+        $batContent = @"
+@echo off
+:: Script para iniciar iJornada Server
+:: Este script es invocado por el Programador de Tareas
+
+:: Navegar al directorio raíz del proyecto (un nivel arriba de scripts)
+cd /d "%~dp0.."
+
+:: Mensaje de log opcional (útil para depurar si falla el inicio)
+echo [%DATE% %TIME%] Iniciando servicio iJornada >> server_log.txt
+
+:: Iniciar la aplicación
+:: Se usa 'call' para asegurar que el bat no termine prematuramente si npm es otro bat
+call "$pnpmPath" start >> server_log.txt 2>&1
+"@
+        Set-Content -Path $BatPath -Value $batContent
+    }
+    else {
+        Write-Warning "No se pudo detectar ruta absoluta de pnpm. El servicio podría fallar si pnpm no está en el PATH del sistema."
+    }
+
     $Action = New-ScheduledTaskAction -Execute $BatPath -WorkingDirectory $ProjectDir
     $Trigger = New-ScheduledTaskTrigger -AtStartup
     $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
@@ -161,7 +202,15 @@ function Start-Manual {
     Write-Host "Iniciando servidor manualmente..." -ForegroundColor Yellow
     Write-Host "Presione Ctrl+C para detener."
     Set-Location $ProjectDir
-    pnpm start
+    
+    $pnpmPath = Get-PnpmPath
+    if (-not $pnpmPath) {
+        $env:Path += ";$env:APPDATA\npm"
+        $pnpmPath = "pnpm"
+    }
+
+    Write-Host "Usando pnpm en: $pnpmPath" -ForegroundColor DarkGray
+    cmd /c $pnpmPath start
     Pause
 }
 

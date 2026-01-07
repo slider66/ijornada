@@ -10,4 +10,4 @@ echo [%DATE% %TIME%] Iniciando servicio iJornada >> server_log.txt
 
 :: Iniciar la aplicación
 :: Se usa 'call' para asegurar que el bat no termine prematuramente si npm es otro bat
-call pnpm start >> server_log.txt 2>&1
+call "C:\Program Files\nodejs\npm.cmd" run start >> server_log.txt 2>&1
