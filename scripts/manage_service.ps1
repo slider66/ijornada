@@ -94,18 +94,42 @@ function Disable-AutoBrowser {
     Pause
 }
 
-function Get-PnpmPath {
-    $pnpmPossiblePaths = @(
+function Get-PackageEntrypoint {
+    Write-Host "Buscando gestor de paquetes (npm o pnpm)..." -ForegroundColor Cyan
+    
+    # Priority list of paths to check
+    $potentialPaths = @(
+        # Global NPM locations (System-wide)
+        "$env:ProgramFiles\nodejs\npm.cmd",
+        "$env:ProgramFiles(x86)\nodejs\npm.cmd",
+        
+        # User-specific NPM/PNPM locations
         "$env:APPDATA\npm\pnpm.cmd",
-        "$env:ProgramFiles\nodejs\pnpm.cmd",
-        (Get-Command "pnpm" -ErrorAction SilentlyContinue).Source
+        "$env:APPDATA\npm\npm.cmd",
+        "$env:LOCALAPPDATA\pnpm\pnpm.exe" # Some pnpm installs go here
     )
 
-    foreach ($path in $pnpmPossiblePaths) {
-        if ($path -and (Test-Path $path)) {
+    # First check explicit paths
+    foreach ($path in $potentialPaths) {
+        if (Test-Path $path) {
+            Write-Host "Encontrado en ruta conocida: $path" -ForegroundColor Gray
             return $path
         }
     }
+
+    # Fallback: Check System PATH
+    $commandsToCheck = @("npm.cmd", "pnpm.cmd", "pnpm.exe")
+    foreach ($cmd in $commandsToCheck) {
+        try {
+            $commandPath = (Get-Command $cmd -ErrorAction Stop).Source
+            if ($commandPath) {
+                Write-Host "Encontrado en PATH: $commandPath" -ForegroundColor Gray
+                return $commandPath
+            }
+        }
+        catch {}
+    }
+
     return $null
 }
 
@@ -113,9 +137,19 @@ function Install-Service {
     Write-Host "Instalando servicio..." -ForegroundColor Yellow
     
     # Ensure start_server.bat uses absolute pnpm path
-    $pnpmPath = Get-PnpmPath
-    if ($pnpmPath) {
-        Write-Host "Configurando servicio con pnpm en: $pnpmPath"
+    # Detect package manager
+    $packageManagerPath = Get-PackageEntrypoint
+    
+    if ($packageManagerPath) {
+        Write-Host "Configurando servicio con: $packageManagerPath" -ForegroundColor Green
+        
+        # Determine the start command depending on the tool
+        $cmdName = Split-Path $packageManagerPath -Leaf
+        $startArgs = "start"
+        if ($cmdName -match "npm") {
+            $startArgs = "run start"
+        }
+
         # Rewrite the batch file with the correct path to ensure it works
         $batContent = @"
 @echo off
@@ -130,12 +164,16 @@ echo [%DATE% %TIME%] Iniciando servicio iJornada >> server_log.txt
 
 :: Iniciar la aplicación
 :: Se usa 'call' para asegurar que el bat no termine prematuramente si npm es otro bat
-call "$pnpmPath" start >> server_log.txt 2>&1
+call "$packageManagerPath" $startArgs >> server_log.txt 2>&1
 "@
         Set-Content -Path $BatPath -Value $batContent
     }
     else {
-        Write-Warning "No se pudo detectar ruta absoluta de pnpm. El servicio podría fallar si pnpm no está en el PATH del sistema."
+        Write-Warning "CRITICO: No se encontró 'npm' ni 'pnpm' en el sistema."
+        Write-Warning "El servicio no se podrá configurar correctamente."
+        Write-Warning "Asegurese de instalar Node.js globalmente."
+        Pause
+        return
     }
 
     $Action = New-ScheduledTaskAction -Execute $BatPath -WorkingDirectory $ProjectDir
