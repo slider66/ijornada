@@ -103,7 +103,29 @@ export default function ExportsPage() {
       // Add company logo if available
       if (companyInfo?.logoPath) {
         try {
-          doc.addImage(companyInfo.logoPath, 'PNG', 14, yPosition, 30, 30);
+          // Load image and convert to base64
+          const getBase64ImageFromURL = (url: string) => {
+            return new Promise((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "Anonymous";
+              img.src = url;
+              img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx?.drawImage(img, 0, 0);
+                const dataURL = canvas.toDataURL("image/png");
+                resolve(dataURL);
+              };
+              img.onerror = (error) => {
+                reject(error);
+              };
+            });
+          };
+
+          const logoData = await getBase64ImageFromURL(companyInfo.logoPath) as string;
+          doc.addImage(logoData, 'PNG', 14, yPosition, 30, 30);
           yPosition += 35;
         } catch (e) {
           // If logo fails to load, just continue without it
