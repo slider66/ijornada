@@ -57,16 +57,27 @@ function Build-App {
             $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
             if ($npmCmd) {
                 & npm install -g pnpm
+                
+                # Fix: Add npm global path to current session PATH if not present
+                $npmGlobalPath = "$env:APPDATA\npm"
+                if (Test-Path $npmGlobalPath) {
+                    if ($env:Path -notlike "*$npmGlobalPath*") {
+                        Write-Host "Agregando $npmGlobalPath al PATH de la sesión actual..." -ForegroundColor Scan
+                        $env:Path += ";$npmGlobalPath"
+                    }
+                }
+
                 # Refresh path or re-check
                 $pnpmCmd = Get-Command pnpm -ErrorAction SilentlyContinue
-            } else {
-                 Write-Error "Ni 'pnpm' ni 'npm' fueron encontrados. Instale Node.js."
-                 exit
+            }
+            else {
+                Write-Error "Ni 'pnpm' ni 'npm' fueron encontrados. Instale Node.js."
+                exit
             }
         }
         catch {
-             Write-Error "Fallo al intentar instalar pnpm: $_"
-             exit
+            Write-Error "Fallo al intentar instalar pnpm: $_"
+            exit
         }
     }
 
@@ -79,7 +90,8 @@ function Build-App {
     # Execute pnpm directly, allowing PowerShell to handle the wrapper/exe resolution
     try {
         & pnpm install --frozen-lockfile
-    } catch {
+    }
+    catch {
         Write-Error "Error ejecutando pnpm install: $_"
         exit
     }
@@ -93,7 +105,8 @@ function Build-App {
     Write-Host "Ejecutando pnpm build..."
     try {
         & pnpm build
-    } catch {
+    }
+    catch {
         Write-Error "Error ejecutando pnpm build: $_"
         exit
     }
