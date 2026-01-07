@@ -161,7 +161,7 @@ function Start-Manual {
     Write-Host "Iniciando servidor manualmente..." -ForegroundColor Yellow
     Write-Host "Presione Ctrl+C para detener."
     Set-Location $ProjectDir
-    npm start
+    pnpm start
     Pause
 }
 
@@ -186,12 +186,12 @@ do {
     switch ($userInput) {
         '1' { Install-Service }
         '2' { Uninstall-Service }
-        '3' { Get-ServiceStatus }
-        '4' { Start-Manual }
+        '3' { Stop-ServiceTask }
+        '4' { Get-ServiceStatus }
         '5' { Enable-AutoBrowser }
         '6' { Disable-AutoBrowser }
         '7' { Run-Update }
-        '8' { Stop-ServiceTask }
+        '8' { Start-Manual }
         'Q' { exit }
         'q' { exit }
         Default { Write-Warning "Opcion no valida" }

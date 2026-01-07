@@ -48,37 +48,58 @@ function Build-App {
     Write-Host "Instalando dependencias y construyendo aplicación..." -ForegroundColor Cyan
     Set-Location $ProjectDir
 
-    # Install deps
-    Write-Host "Verificando pnpm..."
-    try {
-        cmd /c pnpm --version | Out-Null
-    }
-    catch {
-        Write-Warning "pnpm no encontrado. Intentando instalar vía npm..."
+    # Check for pnpm
+    $pnpmCmd = Get-Command pnpm -ErrorAction SilentlyContinue
+    if (-not $pnpmCmd) {
+        Write-Warning "pnpm no encontrado en el PATH. Intentando instalar vía npm..."
         try {
-            cmd /c npm install -g pnpm
+            # Try to install pnpm globally if not found
+            $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+            if ($npmCmd) {
+                & npm install -g pnpm
+                # Refresh path or re-check
+                $pnpmCmd = Get-Command pnpm -ErrorAction SilentlyContinue
+            } else {
+                 Write-Error "Ni 'pnpm' ni 'npm' fueron encontrados. Instale Node.js."
+                 exit
+            }
         }
         catch {
-            Write-Error "No se pudo instalar pnpm. Asegúrese de que Node.js y npm están instalados."
-            exit
+             Write-Error "Fallo al intentar instalar pnpm: $_"
+             exit
         }
     }
 
+    if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+        Write-Error "No se pudo encontrar ni instalar pnpm."
+        exit
+    }
+
     Write-Host "Ejecutando pnpm install..."
-    # We use cmd /c because pnpm is a batch file wrapper on windows usually
-    cmd /c pnpm install --frozen-lockfile
+    # Execute pnpm directly, allowing PowerShell to handle the wrapper/exe resolution
+    try {
+        & pnpm install --frozen-lockfile
+    } catch {
+        Write-Error "Error ejecutando pnpm install: $_"
+        exit
+    }
     
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Error al instalar dependencias."
+        Write-Error "Error al instalar dependencias (Código de salida: $LASTEXITCODE)."
         exit
     }
 
     # Build
     Write-Host "Ejecutando pnpm build..."
-    cmd /c pnpm build
+    try {
+        & pnpm build
+    } catch {
+        Write-Error "Error ejecutando pnpm build: $_"
+        exit
+    }
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Error al construir la aplicación."
+        Write-Error "Error al construir la aplicación (Código de salida: $LASTEXITCODE)."
         exit
     }
 }
